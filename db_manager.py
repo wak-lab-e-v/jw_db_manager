@@ -29,8 +29,8 @@ def read_excel_data(file_path):
     Returns:
         pandas.DataFrame: DataFrame mit den extrahierten Daten
     """
-    # Excel-Datei ohne Header einlesen
-    df = pd.read_excel(file_path, header=None)
+    # Excel-Datei ohne Header einlesen und Datumskonvertierung deaktivieren
+    df = pd.read_excel(file_path, header=None, parse_dates=False)
     
     # Überprüfe, ob die Datei Daten enthält
     if df.empty:
@@ -145,8 +145,11 @@ class DatabaseManager:
                 
                 # Extrahiere und validiere die Daten
                 bestellnummer = str(row.get('BESTELLNUMMER', '')) if row.get('BESTELLNUMMER') is not None else ''
+                # Entferne Leerzeichen links und rechts von Namen und Vornamen
                 name = str(row.get('NAME', '')) if row.get('NAME') is not None else ''
+                name = name.strip()  # Entferne Leerzeichen links und rechts
                 vorname = str(row.get('VORNAME', '')) if row.get('VORNAME') is not None else ''
+                vorname = vorname.strip()  # Entferne Leerzeichen links und rechts
                 
                 # Debug-Ausgabe für die Zeile
                 #print(f"DEBUG Zeile {excel_row}: Name='{name}', Vorname='{vorname}', Bestellnummer='{bestellnummer}'")
@@ -183,11 +186,31 @@ class DatabaseManager:
                 
                 # Bereite die Daten vor und konvertiere alle Werte in Strings
                 
-                # Verarbeite den Feiertag - entferne die Uhrzeit (00:00:00)
+                # Verarbeite den Feiertag - behalte das ursprüngliche Format bei
                 feiertag = str(row.get('FEIERTAG', '')) if row.get('FEIERTAG') is not None else ''
-                # Wenn der Feiertag ein Datum mit Uhrzeit ist, entferne die Uhrzeit
+                # Entferne Uhrzeit, falls vorhanden, aber behalte das ursprüngliche Datumsformat bei
                 if ' 00:00:00' in feiertag:
                     feiertag = feiertag.split(' ')[0]
+                # Stelle sicher, dass das Datum im ursprünglichen Format bleibt (z.B. TT.MM.JJJJ statt JJJJ-MM-TT)
+                # Wenn das Datum im Format JJJJ-MM-TT ist, konvertiere es zu TT.MM.JJJJ
+                if feiertag and '-' in feiertag and len(feiertag.split('-')) == 3:
+                    year, month, day = feiertag.split('-')
+                    feiertag = f"{day}.{month}.{year}"
+                
+                # Verarbeite die Feieruhrzeit - entferne Sekunden und ersetze Doppelpunkte/Punkte durch Bindestriche
+                feieruhrzeit = str(row.get('FEIERUHRZEIT', '')) if row.get('FEIERUHRZEIT') is not None else ''
+                if feieruhrzeit:
+                    # Normalisiere zuerst: Ersetze Punkte durch Doppelpunkte für einheitliche Verarbeitung
+                    feieruhrzeit = feieruhrzeit.replace('.', ':')
+                    
+                    # Entferne Sekunden, falls vorhanden (Format kann HH:MM:SS oder HH:MM sein)
+                    parts = feieruhrzeit.split(':')
+                    if len(parts) >= 2:
+                        # Behalte nur Stunden und Minuten
+                        feieruhrzeit = f"{parts[0]}:{parts[1]}"
+                    
+                    # Ersetze Doppelpunkte durch Bindestriche
+                    feieruhrzeit = feieruhrzeit.replace(':', '-')
                 
                 data = {
                     'bestellnummer': bestellnummer,
@@ -195,7 +218,7 @@ class DatabaseManager:
                     'vorname': vorname,
                     'uid': uid,
                     'feiertag': feiertag,
-                    'feieruhrzeit': str(row.get('FEIERUHRZEIT', '')) if row.get('FEIERUHRZEIT') is not None else '',
+                    'feieruhrzeit': feieruhrzeit,
                     'hint': '',        # Kein Hinweis, da wir Zeilen mit fehlenden Pflichtfeldern überspringen
                     'src_path': '',    # Standardwert für Quellpfad
                     'work_path': '',    # Standardwert für Arbeitspfad
