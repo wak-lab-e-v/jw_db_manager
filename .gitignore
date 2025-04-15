@@ -2,3 +2,5 @@ Anmeldung_Export.xlsx
 db_manager.py
 
 venv/*
+__pycache*
+anmeldungen.db

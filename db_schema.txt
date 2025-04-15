@@ -1,0 +1,36 @@
+-- SQLite Datenbankschema für die Anmeldungsdaten
+-- Basierend auf den Excel-Spalten: Bestellnummer, Name, Vorname, Feiertag, Feieruhrzeit, Bilder da, Bilderabgabe wie
+-- Mit zusätzlichen Spalten: hint, src_path, work_path, status
+
+CREATE TABLE IF NOT EXISTS anmeldungen (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bestellnummer TEXT,                -- Aus Excel: Bestellnumer
+    name TEXT NOT NULL,                -- Aus Excel: Name
+    vorname TEXT NOT NULL,             -- Aus Excel: Vorname
+    uid TEXT NOT NULL,                 -- Aus Excel: UID (crc32 von name + vorname + bestellnummer)
+    feiertag TEXT,                     -- Aus Excel: Feiertag
+    feieruhrzeit TEXT,                 -- Aus Excel: Feieruhrzeit
+    hint TEXT,                         -- Zusätzlich: Hinweise zu Fehlern oder Problemen
+    src_path TEXT,                     -- Zusätzlich: Quellpfad zu zugehörigen Dateien
+    work_path TEXT,                    -- Zusätzlich: Relativer Pfad zu zugehörigen Dateien
+    status TEXT DEFAULT 'neu',         -- Zusätzlich: Status des Eintrags (z.B. neu, in Bearbeitung, abgeschlossen)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index für schnellere Suche nach Bestellnummer
+CREATE INDEX idx_bestellnummer ON anmeldungen(bestellnummer);
+
+-- Index für Namenssuche
+CREATE INDEX idx_name ON anmeldungen(name, vorname);
+
+-- Index für Status
+CREATE INDEX idx_status ON anmeldungen(status);
+
+-- Trigger zum Aktualisieren des updated_at Zeitstempels
+CREATE TRIGGER update_anmeldungen_timestamp 
+AFTER UPDATE ON anmeldungen
+FOR EACH ROW
+BEGIN
+    UPDATE anmeldungen SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
