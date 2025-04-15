@@ -55,19 +55,11 @@ def check_source_directories(db_manager, path_prefix):
             # z.B. von "24.05.2025" zu "2025-05-24" oder ähnlich
             if feiertag and '.' in feiertag:
                 day, month, year = feiertag.split('.')
-                
-                # Unterstütze sowohl lange (2025) als auch kurze (25) Jahresangaben
-                short_year = year[-2:] if len(year) >= 2 else year
-                
                 date_formats = [
-                    f"{year}-{month}-{day}",   # YYYY-MM-DD
-                    f"{day}.{month}.{year}",   # DD.MM.YYYY
-                    f"{day}-{month}-{year}",   # DD-MM-YYYY
-                    f"{year}{month}{day}",     # YYYYMMDD
-                    f"{short_year}-{month}-{day}",  # YY-MM-DD
-                    f"{day}.{month}.{short_year}",  # DD.MM.YY
-                    f"{day}-{month}-{short_year}",  # DD-MM-YY
-                    f"{short_year}{month}{day}"     # YYMMDD
+                    f"{year}-{month}-{day}",  # YYYY-MM-DD
+                    f"{day}.{month}.{year}",  # DD.MM.YYYY
+                    f"{day}-{month}-{year}",  # DD-MM-YYYY
+                    f"{year}{month}{day}"     # YYYYMMDD
                 ]
             else:
                 # Wenn kein gültiges Datum vorhanden ist, verwende den Feiertag direkt

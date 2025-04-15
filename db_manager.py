@@ -16,6 +16,7 @@ warnings.filterwarnings('ignore', category=UserWarning, message='Conditional For
 from cmd_import import execute_import
 from cmd_stats import execute_stats
 from cmd_checksrc import execute_checksrc
+from cmd_checkpic import execute_checkpic
 
 class DatabaseManager:
     def __init__(self, db_path):
@@ -213,6 +214,10 @@ def parse_arguments():
     checksrc_parser.add_argument('--db-file', '-d', required=True, help='Pfad zur SQLite-Datenbankdatei')
     checksrc_parser.add_argument('--path-prefix', '-p', required=True, help='Pfad-Präfix, in dem nach Verzeichnissen gesucht wird')
     
+    # CheckPic-Kommando
+    checkpic_parser = subparsers.add_parser('checkpic', help='Sucht nach Bildern im src_path, die den Vor- und Nachnamen enthalten')
+    checkpic_parser.add_argument('--db-file', '-d', required=True, help='Pfad zur SQLite-Datenbankdatei')
+    
     return parser.parse_args()
 
 
@@ -237,3 +242,6 @@ if __name__ == "__main__":
     
     elif args.command == 'checksrc':
         success, message = execute_checksrc(db_manager, args.path_prefix)
+    
+    elif args.command == 'checkpic':
+        success, message = execute_checkpic(db_manager)
