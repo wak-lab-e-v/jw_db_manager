@@ -117,6 +117,15 @@ def check_pictures(db_manager, target_path=None, operation=None):
                 if 'uess' in name.lower():
                     name_variants.append(name.lower().replace('uess', 'üß').title())
                 
+                # Spezialfall: üß -> uess (wie in Schüßler -> Schuessler)
+                if 'üß' in name.lower():
+                    name_variants.append(name.lower().replace('üß', 'uess').title())
+                # Auch ü und ß einzeln berücksichtigen
+                if 'ü' in name.lower() and 'ß' in name.lower():
+                    temp = name.lower().replace('ü', 'ue')
+                    name_variants.append(temp.replace('ß', 'ss').title())
+                
+                
                 for root, _, files in os.walk(src_path):
                     for file in files:
                         file_lower = file.lower()
@@ -132,6 +141,10 @@ def check_pictures(db_manager, target_path=None, operation=None):
                                     for n in name_variants:
                                         # Prüfe, ob der Dateiname mit dem Vornamen beginnt und den Nachnamen enthält
                                         if file_lower.startswith(v.lower()) and n.lower() in file_lower:
+                                            # Debug-Ausgabe für Schüßler
+                                            if 'schüßler' in n.lower() or 'schuessler' in n.lower() or 'schüßler' in file_lower or 'schuessler' in file_lower:
+                                                print(f"DEBUG: Datei gefunden: {file_lower}")
+                                                print(f"DEBUG: Vorname: {v.lower()}, Nachname: {n.lower()}")
                                             found_images.append(os.path.join(root, file))
                                             match_found = True
                                             break
