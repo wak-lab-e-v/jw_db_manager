@@ -57,7 +57,7 @@ def check_pictures(db_manager, target_path=None, operation=None):
         is_move_operation = operation == 'move'
         
         # Bildendungen
-        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tif', '.tiff']
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tif', '.tiff', '.jfif']
         
         # Iteriere über alle Einträge
         for entry_id, name, vorname, src_path, feiertag, feieruhrzeit, bestellnummer in entries:
@@ -70,17 +70,75 @@ def check_pictures(db_manager, target_path=None, operation=None):
             # Suche nach Bildern im Verzeichnis
             found_images = []
             try:
+                # Vorbereitung der Suchbegriffe
+                # Teile den Vornamen in einzelne Vornamen auf (falls mehrere vorhanden sind)
+                vornamen = [v.strip() for v in vorname.split() if v.strip()]
+                
+                # Erstelle alternative Schreibweisen für Umlaute
+                name_variants = [name]
+                vorname_variants = []
+                
+                # Für jeden Vornamen alternative Schreibweisen erstellen
+                for v in vornamen:
+                    variants = [v]
+                    # Umlaute-Ersetzungen
+                    if 'ä' in v.lower():
+                        variants.append(v.lower().replace('ä', 'ae').title())
+                    if 'ö' in v.lower():
+                        variants.append(v.lower().replace('ö', 'oe').title())
+                    if 'ü' in v.lower():
+                        variants.append(v.lower().replace('ü', 'ue').title())
+                    if 'ß' in v.lower():
+                        variants.append(v.lower().replace('ß', 'ss').title())
+                    vorname_variants.append(variants)
+                
+                # Auch für den Nachnamen alternative Schreibweisen erstellen
+                # Von Umlaut zu Umschreibung
+                if 'ä' in name.lower():
+                    name_variants.append(name.lower().replace('ä', 'ae').title())
+                if 'ö' in name.lower():
+                    name_variants.append(name.lower().replace('ö', 'oe').title())
+                if 'ü' in name.lower():
+                    name_variants.append(name.lower().replace('ü', 'ue').title())
+                if 'ß' in name.lower():
+                    name_variants.append(name.lower().replace('ß', 'ss').title())
+                
+                # Von Umschreibung zu Umlaut (umgekehrte Richtung)
+                if 'ae' in name.lower():
+                    name_variants.append(name.lower().replace('ae', 'ä').title())
+                if 'oe' in name.lower():
+                    name_variants.append(name.lower().replace('oe', 'ö').title())
+                if 'ue' in name.lower():
+                    name_variants.append(name.lower().replace('ue', 'ü').title())
+                if 'ss' in name.lower():
+                    name_variants.append(name.lower().replace('ss', 'ß').title())
+                    
+                # Spezialfall: uess -> üß (wie in Schüßler -> Schuessler)
+                if 'uess' in name.lower():
+                    name_variants.append(name.lower().replace('uess', 'üß').title())
+                
                 for root, _, files in os.walk(src_path):
                     for file in files:
+                        file_lower = file.lower()
                         # Prüfe, ob es sich um ein Bild handelt
-                        if any(file.lower().endswith(ext) for ext in image_extensions):
-                            # Ignoriere Dateien, die "nachgefordert" im Namen enthalten
-                            if "nachgefordert" in file.lower():
-                                continue
-                                
-                            # Prüfe, ob der Dateiname mit dem Vornamen beginnt und den Nachnamen enthält
-                            if file.lower().startswith(vorname.lower()) and name.lower() in file.lower():
-                                found_images.append(os.path.join(root, file))
+                        if any(file_lower.endswith(ext) for ext in image_extensions):
+                            # Prüfe, ob der Dateiname mit einem der Vornamen beginnt und den Nachnamen enthält
+                            match_found = False
+                            
+                            # Prüfe alle Vornamen-Varianten
+                            for vorname_list in vorname_variants:
+                                for v in vorname_list:
+                                    # Prüfe alle Nachnamen-Varianten
+                                    for n in name_variants:
+                                        # Prüfe, ob der Dateiname mit dem Vornamen beginnt und den Nachnamen enthält
+                                        if file_lower.startswith(v.lower()) and n.lower() in file_lower:
+                                            found_images.append(os.path.join(root, file))
+                                            match_found = True
+                                            break
+                                    if match_found:
+                                        break
+                                if match_found:
+                                    break
             except Exception as e:
                 print(f"Fehler beim Durchsuchen des Verzeichnisses {src_path}: {e}")
                 continue
