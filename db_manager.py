@@ -217,6 +217,8 @@ def parse_arguments():
     # CheckPic-Kommando
     checkpic_parser = subparsers.add_parser('checkpic', help='Sucht nach Bildern im src_path, die den Vor- und Nachnamen enthalten')
     checkpic_parser.add_argument('--db-file', '-d', required=True, help='Pfad zur SQLite-Datenbankdatei')
+    checkpic_parser.add_argument('--move', '-m', help='Wenn angegeben, werden gefundene Bilder in diesen Pfad verschoben')
+    checkpic_parser.add_argument('--copy', '-c', help='Wenn angegeben, werden gefundene Bilder in diesen Pfad kopiert')
     
     return parser.parse_args()
 
@@ -244,4 +246,13 @@ if __name__ == "__main__":
         success, message = execute_checksrc(db_manager, args.path_prefix)
     
     elif args.command == 'checkpic':
-        success, message = execute_checkpic(db_manager)
+        # Prüfe, ob sowohl --move als auch --copy angegeben wurden
+        if args.move and args.copy:
+            print("Fehler: --move und --copy können nicht gleichzeitig verwendet werden.")
+            sys.exit(1)
+            
+        # Bestimme den Zielpfad und die Operation (move oder copy)
+        target_path = args.move or args.copy
+        operation = 'move' if args.move else 'copy' if args.copy else None
+        
+        success, message = execute_checkpic(db_manager, target_path, operation)
