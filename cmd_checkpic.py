@@ -49,7 +49,7 @@ def check_pictures(db_manager, target_path=None, operation=None):
         found_count = 0
         not_found_count = 0
         
-        # Zähler für verschobene/kopierte und nicht verschobene/kopierte Bilder
+        # Zähler für verschobene/kopierte und nicht verschobene/kopierte Bilder (für alle Einträge)
         processed_count = 0
         not_processed_count = 0
         
@@ -161,6 +161,9 @@ def check_pictures(db_manager, target_path=None, operation=None):
                 print(f"Gefunden: ID {entry_id}, {vorname} {name}, {len(found_images)} Bilder")
                 found_count += 1
                 
+                # Zähler für die Bilder dieses Eintrags zurücksetzen
+                entry_processed_count = 0
+                
                 # Wenn target_path angegeben ist, verschiebe oder kopiere die Bilder
                 if target_path:
                     # Erstelle die Verzeichnisstruktur
@@ -194,9 +197,10 @@ def check_pictures(db_manager, target_path=None, operation=None):
                                 shutil.copy2(image_path, dest_path)  # Kopiere das Bild (Original bleibt erhalten)
                                 print(f"  Bild kopiert: {image_name} -> {target_dir}")
                             processed_count += 1
+                            entry_processed_count += 1
                             
-                            # Setze das work_path in der Datenbank, wenn es das erste Bild ist
-                            if processed_count == 1:
+                            # Setze das work_path in der Datenbank, wenn es das erste Bild dieses Eintrags ist
+                            if entry_processed_count == 1:
                                 try:
                                     db_manager.cursor.execute("UPDATE anmeldungen SET work_path = ? WHERE id = ?", (rel_path, entry_id))
                                     db_manager.conn.commit()

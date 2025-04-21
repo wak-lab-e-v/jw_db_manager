@@ -55,11 +55,27 @@ def check_source_directories(db_manager, path_prefix):
             # z.B. von "24.05.2025" zu "2025-05-24" oder ähnlich
             if feiertag and '.' in feiertag:
                 day, month, year = feiertag.split('.')
+                
+                # Behandle kurze und lange Jahresangaben
+                short_year = year
+                if len(year) == 4 and year.startswith('20'):
+                    short_year = year[2:]  # z.B. 2025 -> 25
+                elif len(year) == 2:
+                    full_year = f"20{year}"  # z.B. 25 -> 2025
+                    year = full_year
+                
                 date_formats = [
+                    # Lange Jahresformate (YYYY)
                     f"{year}-{month}-{day}",  # YYYY-MM-DD
                     f"{day}.{month}.{year}",  # DD.MM.YYYY
                     f"{day}-{month}-{year}",  # DD-MM-YYYY
-                    f"{year}{month}{day}"     # YYYYMMDD
+                    f"{year}{month}{day}",    # YYYYMMDD
+                    
+                    # Kurze Jahresformate (YY)
+                    f"{short_year}-{month}-{day}",  # YY-MM-DD
+                    f"{day}.{month}.{short_year}",  # DD.MM.YY
+                    f"{day}-{month}-{short_year}",  # DD-MM-YY
+                    f"{short_year}{month}{day}"     # YYMMDD
                 ]
             else:
                 # Wenn kein gültiges Datum vorhanden ist, verwende den Feiertag direkt
@@ -73,6 +89,7 @@ def check_source_directories(db_manager, path_prefix):
                 try:
                     for root, dirs, _ in os.walk(path_prefix):
                         for dir_name in dirs:
+                            #print(f"Prüfe Verzeichnis: {dir_name}")
                             # Prüfe, ob eines der Datumsformate im Verzeichnisnamen enthalten ist
                             for date_format in date_formats:
                                 if date_format and date_format in dir_name:

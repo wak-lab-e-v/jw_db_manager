@@ -62,6 +62,12 @@ TEMPLATE = '''
                     <option value="{{ t }}" {% if t == feieruhrzeit %}selected{% endif %}>{{ t }}</option>
                 {% endfor %}
             </select>
+            <label for="has_images">Bilder:</label>
+            <select name="has_images" id="has_images" class="filter" onchange="this.form.submit()">
+                <option value="">Alle</option>
+                <option value="yes" {% if has_images == 'yes' %}selected{% endif %}>Vorhanden</option>
+                <option value="no" {% if has_images == 'no' %}selected{% endif %}>Nicht vorhanden</option>
+            </select>
         </div>
     </form>
     <script>
@@ -81,6 +87,7 @@ TEMPLATE = '''
             <th>Status</th>
             <th>Created</th>
             <th>Updated</th>
+            <th>Bilder</th>
             <th>Details</th>
         </tr>
         {% for row in rows %}
@@ -94,6 +101,13 @@ TEMPLATE = '''
             <td>{{ row['status'] }}</td>
             <td>{{ row['created_at'] }}</td>
             <td>{{ row['updated_at'] }}</td>
+            <td style="text-align:center">
+                {% if row['work_path'] %}
+                <span title="Bilder vorhanden" style="color: green; font-size: 1.2em;">&#128247;</span>
+                {% else %}
+                
+                {% endif %}
+            </td>
             <td><a href="/details/{{ row['id'] }}?db={{ db }}" target="_blank"><button>Details</button></a></td>
         </tr>
         {% endfor %}
@@ -115,6 +129,7 @@ def index():
     status = request.args.get("status", "")
     feiertag = request.args.get("feiertag", "")
     feieruhrzeit = request.args.get("feieruhrzeit", "")
+    has_images = request.args.get("has_images", "")
     conn = get_db_connection(db)
     cur = conn.cursor()
     # Status-Optionen
@@ -142,6 +157,10 @@ def index():
     if feieruhrzeit:
         where.append("feieruhrzeit = ?")
         params.append(feieruhrzeit)
+    if has_images == "yes":
+        where.append("work_path IS NOT NULL AND work_path != ''")
+    elif has_images == "no":
+        where.append("(work_path IS NULL OR work_path = '')")
     if where:
         sql += " WHERE " + " AND ".join(where)
     sql += " ORDER BY id DESC"
@@ -158,11 +177,12 @@ def index():
         feiertag_options=feiertag_options,
         feieruhrzeit=feieruhrzeit,
         feieruhrzeit_options=feieruhrzeit_options,
+        has_images=has_images,
         db=db
     )
 
 
-@app.route("/details/<int:entry_id>")
+@app.route("/details/<int:entry_id>", methods=["GET", "POST"])
 def details(entry_id):
     db = request.args.get("db") or DB_PATH
     conn = get_db_connection(db)
@@ -185,6 +205,21 @@ def details(entry_id):
     status = row[10]
     created_at = row[11]
     updated_at = row[12]
+    
+    # Wenn POST-Request, Daten aktualisieren
+    if request.method == "POST":
+        vorname = request.form.get("vorname", vorname)
+        name = request.form.get("name", name)
+        hint = request.form.get("hint", hint)
+        status = request.form.get("status", status)
+        
+        # Datenbank aktualisieren
+        conn = get_db_connection(db)
+        cur = conn.cursor()
+        cur.execute(f"UPDATE {TABLE} SET vorname = ?, name = ?, hint = ?, status = ? WHERE id = ?", 
+                   (vorname, name, hint, status, entry_id))
+        conn.commit()
+        conn.close()
     # Status-Optionen importieren
     global STATUS_OPTIONS
     html = f'''
@@ -192,7 +227,7 @@ def details(entry_id):
     <html lang="de">
     <head>
         <meta charset="UTF-8">
-        <title>Details zum Eintrag</title>
+        <title>{vorname} {name} - Details</title>
         <style>
             body {{ font-family: sans-serif; background: #f8f9fa; }}
             .details-container {{ max-width: 700px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 48px 40px; }}
@@ -202,14 +237,18 @@ def details(entry_id):
             .details-row {{ display: flex; flex-direction: row; align-items: flex-start; margin-bottom: 2.2em; }}
             .details-label {{ width: 180px; font-weight: bold; font-size: 1.18em; color: #333; }}
             .details-value {{ flex: 1; font-size: 1.15em; color: #222; word-break: break-word; background: #f5f5f5; padding: 10px 22px; border-radius: 6px; }}
-            .details-row-inline {{ display: flex; flex-direction: row; align-items: center; gap: 2em; margin-bottom: 2.2em; }}
-            .details-label-inline {{ font-weight: bold; font-size: 1.18em; color: #333; margin-right: 0.7em; }}
-            .details-value-inline {{ font-size: 1.15em; color: #222; background: #f5f5f5; padding: 10px 22px; border-radius: 6px; min-width: 120px; }}
-            .details-status-row {{ display: flex; flex-direction: row; align-items: center; gap: 1em; margin-bottom: 2.2em; }}
-            .details-status-label {{ font-weight: bold; font-size: 1.18em; color: #333; margin-right: 0.7em; }}
-            .details-status-select {{ font-size: 1.1em; padding: 7px 20px; border-radius: 6px; border: 1px solid #bbb; background: #f0f0f0; color: #888; pointer-events: none; }}
+            .details-row-inline {{ display: flex; flex-direction: row; align-items: center; margin-bottom: 2.2em; }}
+            .details-label-inline {{ width: 180px; font-weight: bold; font-size: 1.18em; color: #333; }}
+            .details-value-inline {{ flex: 1; font-size: 1.15em; color: #222; padding: 0; }}
+            .details-status-row {{ display: flex; flex-direction: row; align-items: center; margin-bottom: 2.2em; }}
+            .details-status-label {{ width: 180px; font-weight: bold; font-size: 1.18em; color: #333; }}
+            .details-status-select {{ font-size: 1.1em; padding: 7px 20px; border-radius: 6px; border: 1px solid #bbb; background: white; color: #222; }}
             .details-meta-row {{ display: flex; flex-direction: row; align-items: center; gap: 2.5em; color: #888; font-size: 0.97em; margin-top: 2.7em; margin-bottom: 0.4em; }}
             .details-uid {{ font-size: 0.92em; color: #aaa; }}
+            .save-button {{ background: #1976d2; color: white; border: none; border-radius: 5px; padding: 10px 20px; font-size: 1.1em; cursor: pointer; margin-top: 20px; }}
+            .save-button:hover {{ background: #1565c0; }}
+            input[type=text], textarea {{ width: 100%; font-size: 1.15em; padding: 10px; border-radius: 6px; border: 1px solid #ccc; background: white; }}
+            textarea {{ min-height: 80px; }}
         </style>
     </head>
     <body>
@@ -218,42 +257,56 @@ def details(entry_id):
                 <div class="details-title-main">Eintragsdetails</div>
                 <div class="details-title-name">{vorname} {name}</div>
             </div>
-            <div class="details-row-inline">
-                <span class="details-label-inline">Vorname:</span>
-                <span class="details-value-inline">{vorname}</span>
-                <span class="details-label-inline">Name:</span>
-                <span class="details-value-inline">{name}</span>
-            </div>
-            <div class="details-row">
-                <div class="details-label">Bestellnummer:</div>
-                <div class="details-value">{bestellnummer}</div>
-            </div>
-            <div class="details-row">
-                <div class="details-label">Feiertag:</div>
-                <div class="details-value">{feiertag}</div>
-            </div>
-            <div class="details-row">
-                <div class="details-label">Feieruhrzeit:</div>
-                <div class="details-value">{feieruhrzeit}</div>
-            </div>
-            <div class="details-row">
-                <div class="details-label">Hinweis:</div>
-                <div class="details-value">{hint}</div>
-            </div>
-            <div class="details-row">
-                <div class="details-label">src_path:</div>
-                <div class="details-value">{src_path}</div>
-            </div>
-            <div class="details-row">
-                <div class="details-label">work_path:</div>
-                <div class="details-value">{work_path}</div>
-            </div>
-            <div class="details-status-row">
-                <span class="details-status-label">Status:</span>
-                <select class="details-status-select" disabled>
-                    {''.join([f'<option value="{opt}"'+(' selected' if opt==status else '')+f'>{opt}</option>' for opt in STATUS_OPTIONS])}
-                </select>
-            </div>
+            <form method="post">
+                <div class="details-row-inline">
+                    <span class="details-label-inline">Name:</span>
+                    <span class="details-value-inline">
+                        <input type="text" name="vorname" value="{vorname}" style="width:80%; padding:8px; border-radius:5px; border:1px solid #ccc;">
+                    </span>
+                    <span class="details-value-inline">
+                        <input type="text" name="name" value="{name}" style="width:90%; padding:8px; border-radius:5px; border:1px solid #ccc;">
+                    </span>
+                </div>
+                <div class="details-row">
+                    <div class="details-label">Bestellnummer:</div>
+                    <div class="details-value">{bestellnummer}</div>
+                </div>
+                <div class="details-row">
+                    <div class="details-label">Feiertag:</div>
+                    <div class="details-value">{feiertag}</div>
+                </div>
+                <div class="details-row">
+                    <div class="details-label">Feieruhrzeit:</div>
+                    <div class="details-value">{feieruhrzeit}</div>
+                </div>
+                <div class="details-status-row">
+                    <span class="details-status-label">Status:</span>
+                    <select class="details-status-select" name="status">
+                        {''.join([f'<option value="{opt}"'+(' selected' if opt==status else '')+f'>{opt}</option>' for opt in STATUS_OPTIONS])}
+                    </select>
+                </div>
+                <div class="details-row">
+                    <div class="details-label">Hinweis:</div>
+                    <div class="details-value" style="background: transparent; padding: 0;">
+                        <textarea name="hint">{hint}</textarea>
+                    </div>
+                </div>
+                
+                <div style="text-align: right; margin-top: 15px; margin-bottom: 25px;">
+                    <button type="submit" class="save-button">Speichern</button>
+                </div>
+                
+                <div class="details-row">
+                    <div class="details-label">src_path:</div>
+                    <div class="details-value">{src_path}</div>
+                </div>
+                <div class="details-row">
+                    <div class="details-label">work_path:</div>
+                    <div class="details-value">
+                        {work_path if work_path else '<span style="color: #888;">Noch keine Bilder vorhanden</span>'}
+                    </div>
+                </div>
+            </form>
             <div class="details-meta-row">
                 <span>Created: {created_at}</span>
                 <span>Updated: {updated_at}</span>
