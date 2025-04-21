@@ -1,4 +1,4 @@
-# Jugendweihe DM Manager
+# Jugendweihe DB Manager
 
 Ein Tool zur Sortierung und Namenszuordnung, um eine Videoslideshow der Teilnehmerinnen und Teilnehmer zu erstellen.
 
