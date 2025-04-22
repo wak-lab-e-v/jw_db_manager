@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS anmeldungen (
     hint TEXT,                         -- Zusätzlich: Hinweise zu Fehlern oder Problemen
     src_path TEXT,                     -- Zusätzlich: Quellpfad zu zugehörigen Dateien
     work_path TEXT,                    -- Zusätzlich: Relativer Pfad zu zugehörigen Dateien
+    final_picture_1 TEXT,              -- Zusätzlich: Pfad zum ersten finalen Bild
+    final_picture_2 TEXT,              -- Zusätzlich: Pfad zum zweiten finalen Bild
+    final_picture_3 TEXT,              -- Zusätzlich: Pfad zum dritten finalen Bild
     status TEXT DEFAULT 'neu',         -- Zusätzlich: Status des Eintrags (z.B. neu, in Bearbeitung, abgeschlossen)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

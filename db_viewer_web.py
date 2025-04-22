@@ -1,5 +1,22 @@
 from flask import Flask, render_template_string, request
 import sqlite3
+import os
+from PIL import Image
+
+def get_image_info(file_path):
+    """Extract image dimensions and DPI information from an image file"""
+    try:
+        if file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
+            with Image.open(file_path) as img:
+                width, height = img.size
+                dpi = img.info.get('dpi', (0, 0))
+                return f'<td style="text-align: center; padding: 5px; border-bottom: 1px solid #eee;">{width} x {height}</td>' + \
+                       f'<td style="text-align: center; padding: 5px; border-bottom: 1px solid #eee;">{int(dpi[0])} x {int(dpi[1])}</td>'
+        return '<td style="text-align: center; padding: 5px; border-bottom: 1px solid #eee;">-</td>' + \
+               '<td style="text-align: center; padding: 5px; border-bottom: 1px solid #eee;">-</td>'
+    except Exception as e:
+        return '<td style="text-align: center; padding: 5px; border-bottom: 1px solid #eee;">-</td>' + \
+               '<td style="text-align: center; padding: 5px; border-bottom: 1px solid #eee;">-</td>'
 
 # Konfigurierbare Statusoptionen für alle Status-Dropdowns
 STATUS_OPTIONS = [
@@ -333,7 +350,46 @@ def details(entry_id):
                 
             </form>
             <hr/>
-
+            <div style="margin: 15px 0; color: #333;">
+                <h3 style="margin-bottom: 10px;">Dateien: {len([f for f in os.listdir(work_path) if work_path and os.path.exists(work_path) and os.path.isfile(os.path.join(work_path, f))]) if work_path and os.path.exists(work_path) else 0} gefunden</h3>
+                
+                <!-- Dateiliste mit Größen -->
+                <div style="margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="background-color: #f5f5f5;">
+                            <th style="text-align: left; padding: 5px; border-bottom: 1px solid #ddd;">Dateiname</th>
+                            <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">Größe</th>
+                            <th style="text-align: center; padding: 5px; border-bottom: 1px solid #ddd;">Dimensionen</th>
+                            <th style="text-align: center; padding: 5px; border-bottom: 1px solid #ddd;">DPI</th>
+                        </tr>
+                        {''.join([f'<tr>' +
+                                  f'<td style="padding: 5px; border-bottom: 1px solid #eee;">{os.path.basename(f)}</td>' +
+                                  f'<td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{round(os.path.getsize(os.path.join(work_path, f))/1024, 1)} KB</td>' +
+                                  get_image_info(os.path.join(work_path, f)) +
+                                  f'</tr>'
+                                  for f in os.listdir(work_path) 
+                                  if work_path and os.path.exists(work_path) and os.path.isfile(os.path.join(work_path, f))]) 
+                         if work_path and os.path.exists(work_path) else '<tr><td colspan="4" style="color: #888; padding: 5px;">Keine Dateien vorhanden</td></tr>'}
+                    </table>
+                </div>
+                
+                <!-- Bildergalerie mit Toggle-Button für Bildgröße -->
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h3 style="margin-bottom: 0; margin-right: 15px;">Bildergalerie:</h3>
+                    {"<button onclick='window.location.href = window.location.href.replace(\"&full_size=1\", \"\");' style='padding: 5px 10px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;'>Thumbnail anzeigen</button>" if request.args.get("full_size") else f"<button onclick=\"window.location.href = window.location.href + '&full_size=1';\" style=\"padding: 5px 10px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;\">Originalgröße anzeigen</button>"}
+                </div>
+                
+                <div id="imageGallery" style="display: flex; flex-direction: column; gap: 15px;">
+                    {''.join([f'<div style="display: flex; align-items: center; margin-bottom: 10px;">' +
+                              f'<img src="/image/{entry_id}/{os.path.basename(f)}" class="gallery-image" style="max-width: {"none" if request.args.get("full_size") else "400px"}; max-height: {"none" if request.args.get("full_size") else "400px"}; object-fit: contain; margin-right: 15px;">' +
+                              f'<div style="font-size: 0.9em;">{os.path.basename(f)}</div></div>' 
+                              for f in os.listdir(work_path) 
+                              if work_path and os.path.exists(work_path) and os.path.isfile(os.path.join(work_path, f)) and 
+                              f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp'))]) 
+                     if work_path and os.path.exists(work_path) and any(f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')) for f in os.listdir(work_path) if os.path.isfile(os.path.join(work_path, f))) 
+                     else '<div style="color: #888;">Keine Bilder vorhanden</div>'}
+                
+            </div>
             <hr/>
             <div style="margin-top: 2.7em; margin-bottom: 0.4em; color: #888; font-size: 0.97em;">
                 <div style="margin-bottom: 8px;">Quell Path: {src_path}</div>
@@ -349,6 +405,42 @@ def details(entry_id):
     </html>
     '''
     return html
+
+@app.route("/image/<int:entry_id>/<path:filename>")
+def serve_image(entry_id, filename):
+    # Get the entry's work_path from the database
+    db = request.args.get("db") or DB_PATH
+    conn = get_db_connection(db)
+    cur = conn.cursor()
+    cur.execute(f"SELECT work_path FROM {TABLE} WHERE id = ?", (entry_id,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if not row or not row[0]:
+        return "Image not found", 404
+    
+    work_path = row[0]
+    image_path = os.path.join(work_path, filename)
+    
+    # Check if the file exists and is within the work_path
+    if not os.path.exists(image_path) or not os.path.isfile(image_path):
+        return "Image not found", 404
+    
+    # Determine the content type based on file extension
+    content_type = "image/jpeg"  # Default
+    if filename.lower().endswith(".png"):
+        content_type = "image/png"
+    elif filename.lower().endswith(".gif"):
+        content_type = "image/gif"
+    elif filename.lower().endswith(".bmp"):
+        content_type = "image/bmp"
+    
+    # Read and return the image file
+    with open(image_path, "rb") as f:
+        image_data = f.read()
+    
+    from flask import Response
+    return Response(image_data, mimetype=content_type)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
