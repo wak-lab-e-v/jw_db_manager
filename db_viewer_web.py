@@ -105,6 +105,7 @@ TEMPLATE = '''
             <th>Created</th>
             <th>Updated</th>
             <th>Bilder</th>
+            <th>Final</th>
             <th>Details</th>
         </tr>
         {% for row in rows %}
@@ -124,6 +125,11 @@ TEMPLATE = '''
                 {% else %}
                 
                 {% endif %}
+            </td>
+            <td style="text-align:center">
+                {% if row['final_picture_1'] %}<span title="Final Bild 1" style="color: blue;">1</span>{% endif %}
+                {% if row['final_picture_2'] %}<span title="Final Bild 2" style="color: blue;">2</span>{% endif %}
+                {% if row['final_picture_3'] %}<span title="Final Bild 3" style="color: blue;">3</span>{% endif %}
             </td>
             <td><a href="/details/{{ row['id'] }}?db={{ db }}" target="_blank"><button>Details</button></a></td>
         </tr>
@@ -219,9 +225,12 @@ def details(entry_id):
     hint = row[7]
     src_path = row[8]
     work_path = row[9]
-    status = row[10]
-    created_at = row[11]
-    updated_at = row[12]
+    final_picture_1 = row[10] if len(row) > 13 else None
+    final_picture_2 = row[11] if len(row) > 13 else None
+    final_picture_3 = row[12] if len(row) > 13 else None
+    status = row[13] if len(row) > 13 else row[10]
+    created_at = row[14] if len(row) > 13 else row[11]
+    updated_at = row[15] if len(row) > 13 else row[12]
     
     # Wenn POST-Request, Daten aktualisieren
     if request.method == "POST":
@@ -241,16 +250,24 @@ def details(entry_id):
         # Validierung für Feieruhrzeit (HH-MM)
         feieruhrzeit_valid = re.match(r'^([01]?[0-9]|2[0-3])\-([0-5][0-9])$', new_feieruhrzeit) is not None if new_feieruhrzeit else True
         
+        # Finale Bilder aus dem Formular extrahieren
+        new_final_picture_1 = request.form.get("final_picture_1", "")
+        new_final_picture_2 = request.form.get("final_picture_2", "")
+        new_final_picture_3 = request.form.get("final_picture_3", "")
+        
         # Nur aktualisieren, wenn die Formate gültig sind
         if feiertag_valid and feieruhrzeit_valid:
             feiertag = new_feiertag
             feieruhrzeit = new_feieruhrzeit
+            final_picture_1 = new_final_picture_1
+            final_picture_2 = new_final_picture_2
+            final_picture_3 = new_final_picture_3
             
             # Datenbank aktualisieren
             conn = get_db_connection(db)
             cur = conn.cursor()
-            cur.execute(f"UPDATE {TABLE} SET vorname = ?, name = ?, hint = ?, status = ?, feiertag = ?, feieruhrzeit = ? WHERE id = ?", 
-                       (vorname, name, hint, status, feiertag, feieruhrzeit, entry_id))
+            cur.execute(f"UPDATE {TABLE} SET vorname = ?, name = ?, hint = ?, status = ?, feiertag = ?, feieruhrzeit = ?, final_picture_1 = ?, final_picture_2 = ?, final_picture_3 = ? WHERE id = ?", 
+                       (vorname, name, hint, status, feiertag, feieruhrzeit, final_picture_1, final_picture_2, final_picture_3, entry_id))
             conn.commit()
             conn.close()
         else:
@@ -351,6 +368,43 @@ def details(entry_id):
             </form>
             <hr/>
             <div style="margin: 15px 0; color: #333;">
+                <h3 style="margin-bottom: 10px;">Finale Bilder auswählen:</h3>
+                <form method="post" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <label for="final_picture_1" style="display: block; margin-bottom: 5px; font-weight: bold;">Bild 1:</label>
+                        <select name="final_picture_1" id="final_picture_1" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="">-- Kein Bild ausgewählt --</option>
+                            {''.join([f'<option value="{os.path.join(work_path, f)}" {"selected" if final_picture_1 == os.path.join(work_path, f) else ""}>{os.path.basename(f)}</option>' 
+                                      for f in os.listdir(work_path) 
+                                      if work_path and os.path.exists(work_path) and os.path.isfile(os.path.join(work_path, f)) and 
+                                      f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp'))])}
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="final_picture_2" style="display: block; margin-bottom: 5px; font-weight: bold;">Bild 2:</label>
+                        <select name="final_picture_2" id="final_picture_2" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="">-- Kein Bild ausgewählt --</option>
+                            {''.join([f'<option value="{os.path.join(work_path, f)}" {"selected" if final_picture_2 == os.path.join(work_path, f) else ""}>{os.path.basename(f)}</option>' 
+                                      for f in os.listdir(work_path) 
+                                      if work_path and os.path.exists(work_path) and os.path.isfile(os.path.join(work_path, f)) and 
+                                      f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp'))])}
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="final_picture_3" style="display: block; margin-bottom: 5px; font-weight: bold;">Bild 3:</label>
+                        <select name="final_picture_3" id="final_picture_3" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="">-- Kein Bild ausgewählt --</option>
+                            {''.join([f'<option value="{os.path.join(work_path, f)}" {"selected" if final_picture_3 == os.path.join(work_path, f) else ""}>{os.path.basename(f)}</option>' 
+                                      for f in os.listdir(work_path) 
+                                      if work_path and os.path.exists(work_path) and os.path.isfile(os.path.join(work_path, f)) and 
+                                      f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp'))])}
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button type="submit" style="padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Speichern</button>
+                    </div>
+                </form>
+                
                 <h3 style="margin-bottom: 10px;">Dateien: {len([f for f in os.listdir(work_path) if work_path and os.path.exists(work_path) and os.path.isfile(os.path.join(work_path, f))]) if work_path and os.path.exists(work_path) else 0} gefunden</h3>
                 
                 <!-- Dateiliste mit Größen -->
@@ -382,7 +436,27 @@ def details(entry_id):
                 <div id="imageGallery" style="display: flex; flex-direction: column; gap: 15px;">
                     {''.join([f'<div style="display: flex; align-items: center; margin-bottom: 10px;">' +
                               f'<img src="/image/{entry_id}/{os.path.basename(f)}" class="gallery-image" style="max-width: {"none" if request.args.get("full_size") else "400px"}; max-height: {"none" if request.args.get("full_size") else "400px"}; object-fit: contain; margin-right: 15px;">' +
-                              f'<div style="font-size: 0.9em;">{os.path.basename(f)}</div></div>' 
+                              f'<div style="display: flex; flex-direction: column; gap: 5px;">' +
+                              f'<div style="font-size: 0.9em;">{os.path.basename(f)}</div>' +
+                              f'<div style="display: flex; gap: 10px;">' +
+                              f'<form method="post" style="display: inline;">' +
+                              f'<input type="hidden" name="final_picture_1" value="{os.path.join(work_path, f)}">' +
+                              f'<button type="submit" style="padding: 3px 8px; background-color: {"#007bff" if final_picture_1 == os.path.join(work_path, f) else "#f0f0f0"}; color: {"white" if final_picture_1 == os.path.join(work_path, f) else "black"}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">' +
+                              f'Bild 1{" ✓" if final_picture_1 == os.path.join(work_path, f) else ""}</button>' +
+                              f'</form>' +
+                              f'<form method="post" style="display: inline;">' +
+                              f'<input type="hidden" name="final_picture_2" value="{os.path.join(work_path, f)}">' +
+                              f'<button type="submit" style="padding: 3px 8px; background-color: {"#007bff" if final_picture_2 == os.path.join(work_path, f) else "#f0f0f0"}; color: {"white" if final_picture_2 == os.path.join(work_path, f) else "black"}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">' +
+                              f'Bild 2{" ✓" if final_picture_2 == os.path.join(work_path, f) else ""}</button>' +
+                              f'</form>' +
+                              f'<form method="post" style="display: inline;">' +
+                              f'<input type="hidden" name="final_picture_3" value="{os.path.join(work_path, f)}">' +
+                              f'<button type="submit" style="padding: 3px 8px; background-color: {"#007bff" if final_picture_3 == os.path.join(work_path, f) else "#f0f0f0"}; color: {"white" if final_picture_3 == os.path.join(work_path, f) else "black"}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">' +
+                              f'Bild 3{" ✓" if final_picture_3 == os.path.join(work_path, f) else ""}</button>' +
+                              f'</form>' +
+                              f'</div>' +
+                              f'</div>' +
+                              f'</div>' 
                               for f in os.listdir(work_path) 
                               if work_path and os.path.exists(work_path) and os.path.isfile(os.path.join(work_path, f)) and 
                               f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp'))]) 
@@ -394,6 +468,9 @@ def details(entry_id):
             <div style="margin-top: 2.7em; margin-bottom: 0.4em; color: #888; font-size: 0.97em;">
                 <div style="margin-bottom: 8px;">Quell Path: {src_path}</div>
                 <div style="margin-bottom: 8px;">Arbeits Path: {work_path}</div>
+                <div style="margin-bottom: 8px;">Final Bild 1: {final_picture_1 or '-'}</div>
+                <div style="margin-bottom: 8px;">Final Bild 2: {final_picture_2 or '-'}</div>
+                <div style="margin-bottom: 8px;">Final Bild 3: {final_picture_3 or '-'}</div>
                 <div class="details-meta-row">
                     <span>Created: {created_at}</span>
                     <span>Updated: {updated_at}</span>
