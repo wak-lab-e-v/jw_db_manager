@@ -176,7 +176,19 @@ def import_excel_data(db_manager, excel_path):
             }
             
             if existing_entry:
-                # Eintrag existiert bereits, keine Schreibvorgänge durchführen
+                # Eintrag existiert bereits, prüfe ob feiertag oder feieruhrzeit geändert wurden
+                db_manager.cursor.execute("SELECT feiertag, feieruhrzeit FROM anmeldungen WHERE uid = ?", (uid,))
+                db_entry = db_manager.cursor.fetchone()
+                
+                if db_entry and (db_entry[0] != feiertag or db_entry[1] != feieruhrzeit):
+                    # Feierzeit oder Feiertag haben sich geändert
+                    warning_message = f"WARNUNG: Für {name} {vorname} (Bestellnr. {bestellnummer}) hat sich die Feierzeit im XLS geändert!"
+                    print(warning_message)
+                    
+                    # Update den Hint in der Datenbank
+                    hint_message = "Achtung, Feierzeit im XLS verändert!"
+                    db_manager.cursor.execute("UPDATE anmeldungen SET hint = ? WHERE uid = ?", (hint_message, uid))
+                    
                 updated_count += 1
             else:
                 # Neuen Eintrag einfügen
