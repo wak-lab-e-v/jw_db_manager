@@ -181,6 +181,9 @@ def check_pictures(db_manager, target_path=None, operation=None):
                     # Erstelle den relativen Pfad für work_path (relativ zum move_path)
                     rel_path = os.path.join(feiertag_dir, feieruhrzeit_dir, person_dir)
                     
+                    # Erstelle den vollständigen Pfad für work_path
+                    full_path = os.path.abspath(target_dir)
+                    
                     # Verschiebe die Bilder
                     for image_path in found_images:
                         try:
@@ -202,9 +205,9 @@ def check_pictures(db_manager, target_path=None, operation=None):
                             # Setze das work_path in der Datenbank, wenn es das erste Bild dieses Eintrags ist
                             if entry_processed_count == 1:
                                 try:
-                                    db_manager.cursor.execute("UPDATE anmeldungen SET work_path = ? WHERE id = ?", (rel_path, entry_id))
+                                    db_manager.cursor.execute("UPDATE anmeldungen SET work_path = ? WHERE id = ?", (full_path, entry_id))
                                     db_manager.conn.commit()
-                                    print(f"  Work_path in Datenbank aktualisiert: {rel_path}")
+                                    print(f"  Work_path in Datenbank aktualisiert: {full_path}")
                                 except Exception as e:
                                     print(f"  Fehler beim Aktualisieren des work_path in der Datenbank: {e}")
                         except Exception as e:

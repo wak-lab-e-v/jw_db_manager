@@ -3,7 +3,7 @@ import sqlite3
 
 # Konfigurierbare Statusoptionen für alle Status-Dropdowns
 STATUS_OPTIONS = [
-    'neu',
+    'neu importiert',
     'in Bearbeitung',
     'abgeschlossen',
     'wartet',
@@ -213,13 +213,37 @@ def details(entry_id):
         hint = request.form.get("hint", hint)
         status = request.form.get("status", status)
         
-        # Datenbank aktualisieren
-        conn = get_db_connection(db)
-        cur = conn.cursor()
-        cur.execute(f"UPDATE {TABLE} SET vorname = ?, name = ?, hint = ?, status = ? WHERE id = ?", 
-                   (vorname, name, hint, status, entry_id))
-        conn.commit()
-        conn.close()
+        # Neue Werte für Feiertag und Feieruhrzeit
+        new_feiertag = request.form.get("feiertag", feiertag)
+        new_feieruhrzeit = request.form.get("feieruhrzeit", feieruhrzeit)
+        
+        # Validierung für Feiertag (TT.MM.YYYY)
+        import re
+        feiertag_valid = re.match(r'^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.(19|20)\d\d$', new_feiertag) is not None if new_feiertag else True
+        
+        # Validierung für Feieruhrzeit (HH-MM)
+        feieruhrzeit_valid = re.match(r'^([01]?[0-9]|2[0-3])\-([0-5][0-9])$', new_feieruhrzeit) is not None if new_feieruhrzeit else True
+        
+        # Nur aktualisieren, wenn die Formate gültig sind
+        if feiertag_valid and feieruhrzeit_valid:
+            feiertag = new_feiertag
+            feieruhrzeit = new_feieruhrzeit
+            
+            # Datenbank aktualisieren
+            conn = get_db_connection(db)
+            cur = conn.cursor()
+            cur.execute(f"UPDATE {TABLE} SET vorname = ?, name = ?, hint = ?, status = ?, feiertag = ?, feieruhrzeit = ? WHERE id = ?", 
+                       (vorname, name, hint, status, feiertag, feieruhrzeit, entry_id))
+            conn.commit()
+            conn.close()
+        else:
+            # Fehlermeldung setzen (wird später im HTML angezeigt)
+            error_msg = ""
+            if not feiertag_valid:
+                error_msg += "Feiertag muss im Format TT.MM.YYYY sein. "
+            if not feieruhrzeit_valid:
+                error_msg += "Feieruhrzeit muss im Format HH-MM sein."
+            hint = error_msg + "\n" + hint
     # Status-Optionen importieren
     global STATUS_OPTIONS
     html = f'''
@@ -229,8 +253,8 @@ def details(entry_id):
         <meta charset="UTF-8">
         <title>{vorname} {name} - Details</title>
         <style>
-            body {{ font-family: sans-serif; background: #f8f9fa; }}
-            .details-container {{ max-width: 700px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 48px 40px; }}
+            body {{ font-family: sans-serif; background: #f8f9fa; margin: 0; padding: 0; }}
+            .details-container {{ width: calc(100% - 100px); margin: 50px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 48px 40px; box-sizing: border-box; }}
             .details-title-row {{ display: flex; align-items: baseline; gap: 2.5em; margin-bottom: 2.8em; }}
             .details-title-main {{ font-size: 2.2em; font-weight: 700; color: #333; }}
             .details-title-name {{ font-size: 1.5em; color: #1976d2; font-weight: 500; }}
@@ -255,62 +279,70 @@ def details(entry_id):
         <div class="details-container">
             <div class="details-title-row">
                 <div class="details-title-main">Eintragsdetails</div>
-                <div class="details-title-name">{vorname} {name}</div>
+                <div class="details-title-name">{vorname} {name} <span style="font-size: 0.85em; opacity: 0.8;">({bestellnummer})</span></div>
             </div>
             <form method="post">
-                <div class="details-row-inline">
-                    <span class="details-label-inline">Name:</span>
-                    <span class="details-value-inline">
-                        <input type="text" name="vorname" value="{vorname}" style="width:80%; padding:8px; border-radius:5px; border:1px solid #ccc;">
-                    </span>
-                    <span class="details-value-inline">
-                        <input type="text" name="name" value="{name}" style="width:90%; padding:8px; border-radius:5px; border:1px solid #ccc;">
-                    </span>
+                <div class="details-row-inline" style="display: flex; gap: 20px; align-items: flex-start;">
+                    <div style="width: 60%;">
+                        <span class="details-label-inline">Name:</span>
+                        <div style="display: flex; gap: 10px;">
+                            <span class="details-value-inline" style="flex: 1;">
+                                <input type="text" name="vorname" value="{vorname}" style="width:95%; padding:8px; border-radius:5px; border:1px solid #ccc;">
+                            </span>
+                            <span class="details-value-inline" style="flex: 1;">
+                                <input type="text" name="name" value="{name}" style="width:95%; padding:8px; border-radius:5px; border:1px solid #ccc;">
+                            </span>
+                        </div>
+                    </div>
+                    <div style="width: 33%;">
+                        <div class="details-label">Feiertag:</div>
+                        <div class="details-value" style="background: transparent; padding: 0;">
+                            <input type="text" name="feiertag" value="{feiertag}" style="padding:8px; border-radius:5px; border:1px solid #ccc; width: 90%;" placeholder="TT.MM.YYYY">
+                            <div style="font-size: 0.8em; color: #666; margin-top: 5px;">Format: TT.MM.YYYY</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="details-row">
-                    <div class="details-label">Bestellnummer:</div>
-                    <div class="details-value">{bestellnummer}</div>
+                <div class="details-row-inline" style="display: flex; gap: 20px; align-items: flex-start; margin-top: -10px;">
+                    <div style="width: 60%;">
+                        <div class="details-status-row" style="margin-top: 0;">
+                            <span class="details-status-label">Status:</span>
+                            <select class="details-status-select" name="status">
+                                {''.join([f'<option value="{opt}"'+(' selected' if opt==status else '')+f'>{opt}</option>' for opt in STATUS_OPTIONS])}
+                            </select>
+                        </div>
+                    </div>
+                    <div style="width: 33%;">
+                        <div class="details-label">Feieruhrzeit:</div>
+                        <div class="details-value" style="background: transparent; padding: 0;">
+                            <input type="text" name="feieruhrzeit" value="{feieruhrzeit}" style="padding:8px; border-radius:5px; border:1px solid #ccc; width: 90%;" placeholder="HH-MM">
+                            <div style="font-size: 0.8em; color: #666; margin-top: 5px;">Format: HH-MM</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="details-row">
-                    <div class="details-label">Feiertag:</div>
-                    <div class="details-value">{feiertag}</div>
-                </div>
-                <div class="details-row">
-                    <div class="details-label">Feieruhrzeit:</div>
-                    <div class="details-value">{feieruhrzeit}</div>
-                </div>
-                <div class="details-status-row">
-                    <span class="details-status-label">Status:</span>
-                    <select class="details-status-select" name="status">
-                        {''.join([f'<option value="{opt}"'+(' selected' if opt==status else '')+f'>{opt}</option>' for opt in STATUS_OPTIONS])}
-                    </select>
-                </div>
-                <div class="details-row">
-                    <div class="details-label">Hinweis:</div>
-                    <div class="details-value" style="background: transparent; padding: 0;">
-                        <textarea name="hint">{hint}</textarea>
+                <div class="details-row" style="margin-top: 10px; display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <div class="details-label">Hinweis:</div>
+                        <div class="details-value" style="background: transparent; padding: 0; max-width: 800px;">
+                            <textarea name="hint" style="width: 95%;">{hint}</textarea>
+                        </div>
+                    </div>
+                    <div style="margin-left: 20px; display: flex; align-items: center; height: 100%;">
+                        <button type="submit" class="save-button">Speichern</button>
                     </div>
                 </div>
                 
-                <div style="text-align: right; margin-top: 15px; margin-bottom: 25px;">
-                    <button type="submit" class="save-button">Speichern</button>
-                </div>
-                
-                <div class="details-row">
-                    <div class="details-label">src_path:</div>
-                    <div class="details-value">{src_path}</div>
-                </div>
-                <div class="details-row">
-                    <div class="details-label">work_path:</div>
-                    <div class="details-value">
-                        {work_path if work_path else '<span style="color: #888;">Noch keine Bilder vorhanden</span>'}
-                    </div>
-                </div>
             </form>
-            <div class="details-meta-row">
-                <span>Created: {created_at}</span>
-                <span>Updated: {updated_at}</span>
-                <span class="details-uid">UID: {uid}</span>
+            <hr/>
+
+            <hr/>
+            <div style="margin-top: 2.7em; margin-bottom: 0.4em; color: #888; font-size: 0.97em;">
+                <div style="margin-bottom: 8px;">Quell Path: {src_path}</div>
+                <div style="margin-bottom: 8px;">Arbeits Path: {work_path}</div>
+                <div class="details-meta-row">
+                    <span>Created: {created_at}</span>
+                    <span>Updated: {updated_at}</span>
+                    <span class="details-uid">UID: {uid}</span>
+                </div>
             </div>
         </div>
     </body>
