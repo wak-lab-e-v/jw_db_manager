@@ -127,9 +127,9 @@ TEMPLATE = '''
                 {% endif %}
             </td>
             <td style="text-align:center">
-                {% if row['final_picture_1'] %}<span title="Final Bild 1" style="color: blue;">1</span>{% endif %}
-                {% if row['final_picture_2'] %}<span title="Final Bild 2" style="color: blue;">2</span>{% endif %}
-                {% if row['final_picture_3'] %}<span title="Final Bild 3" style="color: blue;">3</span>{% endif %}
+                {% if row['final_picture_1'] %}<span title="Final Bild 1" style="color: #28a745; font-size: 1.2em; margin-right: 3px;">&#9312;</span>{% endif %}
+                {% if row['final_picture_2'] %}<span title="Final Bild 2" style="color: #fd7e14; font-size: 1.2em; margin-right: 3px;">&#9313;</span>{% endif %}
+                {% if row['final_picture_3'] %}<span title="Final Bild 3" style="color: #dc3545; font-size: 1.2em;">&#9314;</span>{% endif %}
             </td>
             <td><a href="/details/{{ row['id'] }}?db={{ db }}" target="_blank"><button>Details</button></a></td>
         </tr>
