@@ -3,6 +3,21 @@ import sys
 import os
 from PIL import Image, ImageDraw, ImageFont, ExifTags
 
+
+# Create a semi-transparent gray background for text
+padding_vertical = 20  # Vertical padding
+padding_horizontal = 20  # Horizontal padding for side text
+
+# Create a darker gray background color
+darker_gray = (80, 80, 80, 168)  # Darker gray with higher opacity
+
+default_font_size = 150  # Extremely large font size
+default_font_line_spacing  = 42
+horizontal_text_pos = 50
+vertical_text_pos = 100
+text_y_offset = 5
+
+
 def get_image_orientation(image_path):
     """
     Get the orientation of the image based on EXIF data.
@@ -36,6 +51,57 @@ def get_image_orientation(image_path):
     except Exception as e:
         print(f"Error reading EXIF data: {e}")
         return 0  # Default rotation
+
+
+def load_font(font_size):
+    # Try to load a nice font with a MUCH larger size
+    try:
+        # Try several common fonts
+        try:
+            return ImageFont.truetype("Arial", font_size)
+        except IOError:
+            try:
+                return ImageFont.truetype("DejaVuSans", font_size)
+            except IOError:
+                try:
+                    return ImageFont.truetype("FreeSans", font_size)
+                except IOError:
+                    # Last resort - use default but still make it large
+                    default_font = ImageFont.load_default()
+                    # The default font is typically very small, so we'll create a larger version
+                    return ImageFont.truetype("DejaVuSans.ttf", font_size)
+    except Exception as e:
+        print(f"Warning: Could not load desired font: {e}")
+        # Absolute fallback - use default
+        return ImageFont.load_default()
+
+def calcTextSize(aFont, aText, line_spacing = 40):
+    # Recalculate text dimensions with wrapped text
+    """Calculate the bounding box for a multiline text."""
+    lines = aText.split('\n')
+    max_width = 0
+    total_height = 0
+
+    try:
+        # For newer Pillow versions
+        for line in lines:
+            bbox = aFont.getbbox(line)
+            line_width = bbox[2] - bbox[0]
+            line_height = bbox[3] - bbox[1]
+            
+            max_width = max(max_width, line_width)
+            total_height += line_height + line_spacing
+        total_height -= line_spacing
+        return max_width, total_height
+
+    except AttributeError:
+        # Fallback method
+        Lines = aText.count("\n") + 1
+        fontsize = aFont.size
+        atext_width = fontsize * max([len(line) for line in aText.count("\n")]) * 0.6
+        atext_height = fontsize * 1.2 * nLines
+
+        return atext_width, atext_height
 
 def process_image(image_path, person_name, shift_right=True):
     """
@@ -75,36 +141,29 @@ def process_image(image_path, person_name, shift_right=True):
         canvas = Image.new('RGB', (1920, 1080), (0, 0, 0))
         
         # Resize the image while maintaining aspect ratio
-        if is_vertical:
-            # For vertical images, resize to fit height
-            ratio = 1080 / height
-            new_width = int(width * ratio)
-            new_height = 1080
-            resized_img = img.resize((new_width, new_height), Image.LANCZOS)
-            
+        ratio = 1080 / height
+        new_width = int(width * ratio)
+        new_height = 1080
+        resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+
+        if is_vertical: 
             # Calculate the position to paste the image (35% shift - increased from 25%)
             shift_amount = int(1920 * 0.35)  # More room for text
             
             if shift_right:
                 # Shift image to the right with margin, text will be on the left
-                paste_position = (1920 - new_width - 80, 0)  # 80px margin from right edge
-                text_position = (1920 // 2, 1080 - 80)  # Position closer to bottom
+                paste_position = (1920 - new_width - vertical_text_pos, 0)  # 80px margin from right edge
+                text_position = (1920 // 2, 1080 - vertical_text_pos)  # Position closer to bottom
                 text_align = "center"
             else:
                 # Shift image to the left with margin, text will be on the right
-                paste_position = (80, 0)  # 80px margin from left edge
-                text_position = (1920 // 2, 1080 - 80)  # Position closer to bottom
+                paste_position = (vertical_text_pos, 0)  # 80px margin from left edge
+                text_position = (1920 // 2, 1080 - vertical_text_pos)  # Position closer to bottom
                 text_align = "center"
         else:
-            # For horizontal images, resize to fit width
-            ratio = 1920 / width
-            new_width = 1920
-            new_height = int(height * ratio)
-            resized_img = img.resize((new_width, new_height), Image.LANCZOS)
-            
             # Center the image vertically
-            paste_position = (0, (1080 - new_height) // 2)
-            text_position = (1920 // 2, 1080 - 80)  # Position closer to bottom
+            paste_position = ((1920 - new_width) // 2, 0)
+            text_position = (1920 // 2, 1080 - horizontal_text_pos)  # Position closer to bottom
             text_align = "center"
         
         # Paste the resized image onto the canvas
@@ -112,62 +171,13 @@ def process_image(image_path, person_name, shift_right=True):
         
         # Add text with semi-transparent background
         draw = ImageDraw.Draw(canvas)
-        
-        # Try to load a nice font with a MUCH larger size
-        font_size = 150  # Extremely large font size
-        try:
-            # Try several common fonts
-            try:
-                font = ImageFont.truetype("Arial", font_size)
-            except IOError:
-                try:
-                    font = ImageFont.truetype("DejaVuSans", font_size)
-                except IOError:
-                    try:
-                        font = ImageFont.truetype("FreeSans", font_size)
-                    except IOError:
-                        # Last resort - use default but still make it large
-                        default_font = ImageFont.load_default()
-                        # The default font is typically very small, so we'll create a larger version
-                        font = ImageFont.truetype("DejaVuSans.ttf", font_size)
-        except Exception as e:
-            print(f"Warning: Could not load desired font: {e}")
-            # Absolute fallback - use default
-            font = ImageFont.load_default()
-            font_size = 150  # Still try to make it as large as possible
+        font = load_font(default_font_size)
+        font_size = font.size
         
         # Calculate text size (compatible with newer Pillow versions)
-        try:
-            # For newer Pillow versions
-            bbox = font.getbbox(person_name)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
-        except AttributeError:
-            try:
-                # For older Pillow versions
-                text_width, text_height = draw.textsize(person_name, font=font)
-            except AttributeError:
-                # Fallback method
-                text_width = font_size * len(person_name) * 0.6  # Rough estimate
-                text_height = font_size * 1.2
-        
-        # Adjust text position based on alignment
-        if text_align == "center":
-            text_x = text_position[0] - text_width // 2
-        elif text_align == "right":
-            text_x = text_position[0] - text_width
-        else:  # left
-            text_x = text_position[0]
-        
-        text_y = text_position[1] - text_height // 2
-        
-        # Create a semi-transparent gray background for text
-        padding_vertical = 10  # Vertical padding
-        padding_horizontal = 20  # Horizontal padding for side text
-        
-        # Create a darker gray background color
-        darker_gray = (80, 80, 80, 168)  # Darker gray with higher opacity
-        
+        text_width, text_height = calcTextSize(font, person_name, default_font_line_spacing)
+
+       
         if is_vertical:
             # For vertical images, place text on the side (opposite to the image shift) without a gray bar
             
@@ -188,19 +198,8 @@ def process_image(image_path, person_name, shift_right=True):
             
             # Use the wrapped name instead of the original
             person_name = wrapped_name
-            
-            # Recalculate text dimensions with wrapped text
-            lines = wrapped_name.count("\n") + 1
-            try:
-                # For newer Pillow versions
-                bbox = font.getbbox(wrapped_name)
-                text_width = bbox[2] - bbox[0]
-                text_height = bbox[3] - bbox[1] * lines  # Approximate height for wrapped text
-            except AttributeError:
-                # Fallback method
-                text_width = font_size * max([len(line) for line in wrapped_name.split("\n")]) * 0.6
-                text_height = font_size * 1.2 * lines
-            
+            text_width, text_height = calcTextSize(font, wrapped_name, default_font_line_spacing)
+               
             if shift_right:
                 # Image is on the right with margin, so text goes on the left side
                 text_x = 200  # Left margin
@@ -219,11 +218,19 @@ def process_image(image_path, person_name, shift_right=True):
             
         else: # QUER
             # For horizontal images, place text at the bottom
+                    # Adjust text position based on alignment
+            if text_align == "center":
+                text_x = text_position[0] - text_width // 2
+            elif text_align == "right":
+                text_x = text_position[0] - text_width
+            else:  # left
+                text_x = text_position[0]
+
             # Calculate background dimensions for bottom placement
-            text_bg_height = int(text_height + padding_vertical*2) #  - font_size * 0.2)
+            text_bg_height = int(text_height + padding_vertical*2) # - font_size * 0.2)
             
             # Position the background at the bottom
-            bg_y_position = 1080 - text_bg_height
+            bg_y_position = 1080 - text_bg_height - horizontal_text_pos
             text_y = bg_y_position + padding_vertical - 30  # Move text up a bit
             
             # Create and paste the full-width background
@@ -234,7 +241,7 @@ def process_image(image_path, person_name, shift_right=True):
         sun_yellow = (255, 215, 0)  # RGB value for sun yellow
         
         # Use align parameter for multiline text
-        draw.text((text_x, text_y), person_name, fill=sun_yellow, font=font, align=text_align)
+        draw.text((text_x, text_y+text_y_offset), person_name, fill=sun_yellow, font=font, align=text_align)
         
         return canvas
     
@@ -284,9 +291,16 @@ if __name__ == "__main__":
     if not args.command:
         print("Error: No command specified. Use 'python dbv_autoimgcov.py -h' for help.")
         sys.exit(1)
-        # print(execute_autoconvert('../source/h.jpg', '../source/h1.jpg', "Hallo Text"))
-        # print(execute_autoconvert('../source/q.jpg', '../source/q1.jpg', "Hallo Text"))
-        
+        '''
+        print(execute_autoconvert('./temp/Bild1.jpg', './temp/result/Bild1_.jpg', "1ee Hallo-Text Bild1Modi"))
+        print(execute_autoconvert('./temp/Bild2.jpg', './temp/result/Bild2_.jpg', "Hallo Textadasd Bild1Modi"))
+        print(execute_autoconvert('./temp/Bild3.jpg', './temp/result/Bild3_.jpg', "Hallo-Textddd Bild1Modi"))
+        print(execute_autoconvert('./temp/Bild4.jpg', './temp/result/Bild4_.jpg', "Hallodsfsd Textad Bisdld1Modi"))
+        print(execute_autoconvert('./temp/Bild1.jpg', './temp/result/Bild5_.jpg', "Hallo-Text Bild1Modi"))
+        print(execute_autoconvert('./temp/Bild2.jpg', './temp/result/Bild6_.jpg', "Hallo Textadasdsdf Bild1Modi"))
+        print(execute_autoconvert('./temp/Bild3.jpg', './temp/result/Bild7_.jpg', "HalloTesdftddd Bild1Modi"))
+        print(execute_autoconvert('./temp/Bild4.jpg', './temp/result/Bild8_.jpg', "Hsdfallo Textad Bild1Modi"))
+        '''
         
     if args.command == 'auto':
         # Use the parsed arguments
