@@ -10,6 +10,7 @@ padding_horizontal = 20  # Horizontal padding for side text
 
 # Create a darker gray background color
 darker_gray = (80, 80, 80, 168)  # Darker gray with higher opacity
+shadow_color = (0, 0, 0,168 )     # Schwarz
 
 default_font_size = 150  # Extremely large font size
 default_font_line_spacing  = 42
@@ -241,7 +242,9 @@ def process_image(image_path, person_name, shift_right=True):
         sun_yellow = (255, 215, 0)  # RGB value for sun yellow
         
         # Use align parameter for multiline text
+        draw.text((text_x+4, text_y+text_y_offset+4), person_name, fill=shadow_color , font=font, align=text_align)
         draw.text((text_x, text_y+text_y_offset), person_name, fill=sun_yellow, font=font, align=text_align)
+        
         
         return canvas
     
@@ -290,8 +293,8 @@ if __name__ == "__main__":
     
     if not args.command:
         print("Error: No command specified. Use 'python dbv_autoimgcov.py -h' for help.")
-        sys.exit(1)
-        '''
+        
+        
         print(execute_autoconvert('./temp/Bild1.jpg', './temp/result/Bild1_.jpg', "1ee Hallo-Text Bild1Modi"))
         print(execute_autoconvert('./temp/Bild2.jpg', './temp/result/Bild2_.jpg', "Hallo Textadasd Bild1Modi"))
         print(execute_autoconvert('./temp/Bild3.jpg', './temp/result/Bild3_.jpg', "Hallo-Textddd Bild1Modi"))
@@ -300,7 +303,7 @@ if __name__ == "__main__":
         print(execute_autoconvert('./temp/Bild2.jpg', './temp/result/Bild6_.jpg', "Hallo Textadasdsdf Bild1Modi"))
         print(execute_autoconvert('./temp/Bild3.jpg', './temp/result/Bild7_.jpg', "HalloTesdftddd Bild1Modi"))
         print(execute_autoconvert('./temp/Bild4.jpg', './temp/result/Bild8_.jpg', "Hsdfallo Textad Bild1Modi"))
-        '''
+        sys.exit(1)
         
     if args.command == 'auto':
         # Use the parsed arguments
