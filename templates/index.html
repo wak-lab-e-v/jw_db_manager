@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Datenbank-Viewer Web</title>
+    <style>
+        body { font-family: sans-serif; background: #f8f9fa; }
+        table { border-collapse: collapse; width: 100%; background: #fff; margin-top: 1em; }
+        th, td { border: 1px solid #ccc; padding: 8px 10px; }
+        th { background: #e9ecef; }
+        tr:nth-child(even) { background: #f2f2f2; }
+        .searchbar { margin-top: 1em; }
+        .filter { margin-left: 1em; }
+        .error-message { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Datenbank-Übersicht</h1>
+    {% if db_error %}
+    <div class="error-message">{{ db_error }}</div>
+    {% endif %}
+    <p style="font-weight:bold;">{{ rows|length }} Einträge gefunden.</p>
+    <form method="get" class="searchbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1em;" id="searchForm">
+        <div style="flex:1; min-width:200px; display: flex; align-items: center; gap: 0.5em;">
+            <input type="text" name="q" id="searchInput" value="{{ q }}" placeholder="Suche...">
+            <button type="submit">Suchen/Filtern</button>
+            <button type="button" onclick="resetSearch()">Zurücksetzen</button>
+            <input type="hidden" name="db" value="{{ db }}">
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5em;">
+            <label for="status">Status:</label>
+            <select name="status" id="status" class="filter" onchange="this.form.submit()">
+                <option value="">Alle</option>
+                {% for s in status_options %}
+                    <option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+            <label for="feiertag">Feiertag:</label>
+            <select name="feiertag" id="feiertag" class="filter" onchange="this.form.submit()">
+                <option value="">Alle</option>
+                {% for f in feiertag_options %}
+                    <option value="{{ f }}" {% if f == feiertag %}selected{% endif %}>{{ f }}</option>
+                {% endfor %}
+            </select>
+            <label for="feieruhrzeit">Feierzeit:</label>
+            <select name="feieruhrzeit" id="feieruhrzeit" class="filter" onchange="this.form.submit()">
+                <option value="">Alle</option>
+                {% for t in feieruhrzeit_options %}
+                    <option value="{{ t }}" {% if t == feieruhrzeit %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+            <label for="has_images">Bilder:</label>
+            <select name="has_images" id="has_images" class="filter" onchange="this.form.submit()">
+                <option value="">Alle</option>
+                <option value="yes" {% if has_images == 'yes' %}selected{% endif %}>Vorhanden</option>
+                <option value="no" {% if has_images == 'no' %}selected{% endif %}>Nicht vorhanden</option>
+            </select>
+        </div>
+    </form>
+    <script>
+    function resetSearch() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchForm').submit();
+    }
+    </script>
+    <table>
+        <tr>
+            <th>Bestellnummer</th>
+            <th style="width:125px;">Vorname</th>
+            <th>Name</th>
+            <th>Feieruhrzeit</th>
+            <th>Feiertag</th>
+            <th>Hint</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Updated</th>
+            <th>Bilder</th>
+            <th>Final</th>
+            <th>Details</th>
+        </tr>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row['bestellnummer'] }}</td>
+            <td style="text-align:right">{{ row['vorname'] }}</td>
+            <td style="text-align:left">{{ row['name'] }}</td>
+            <td>{{ row['feieruhrzeit'] }}</td>
+            <td>{{ row['feiertag'] }}</td>
+            <td>{{ row['hint'] }}</td>
+            <td>{{ row['status'] }}</td>
+            <td>{{ row['created_at'] }}</td>
+            <td>{{ row['updated_at'] }}</td>
+            <td style="text-align:center">
+                {% if row['work_path'] %}
+                <span title="Bilder vorhanden" style="color: green; font-size: 1.2em;">&#128247;</span>
+                {% else %}
+                
+                {% endif %}
+            </td>
+            <td style="text-align:center">
+                {% if row['final_picture_1'] %}<span title="Final Bild 1" style="color: #28a745; font-size: 1.2em; margin-right: 3px;">&#9312;</span>{% endif %}
+                {% if row['final_picture_2'] %}<span title="Final Bild 2" style="color: #fd7e14; font-size: 1.2em; margin-right: 3px;">&#9313;</span>{% endif %}
+                {% if row['final_picture_3'] %}<span title="Final Bild 3" style="color: #dc3545; font-size: 1.2em;">&#9314;</span>{% endif %}
+            </td>
+            <td><a href="/details/{{ row['id'] }}?db={{ db }}" target="_blank"><button>Details</button></a></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p style="font-weight:bold;">{{ rows|length }} Einträge gefunden.</p>
+</body>
+</html>

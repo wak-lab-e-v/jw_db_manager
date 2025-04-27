@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ vorname }} {{ name }} - Details</title>
+    <style>
+        body { font-family: sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .details-container { width: calc(100% - 100px); margin: 50px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 48px 40px; box-sizing: border-box; }
+        .details-title-row { display: flex; align-items: baseline; gap: 2.5em; margin-bottom: 2.8em; }
+        .details-title-main { font-size: 2.2em; font-weight: 700; color: #333; }
+        .details-title-name { font-size: 1.5em; color: #1976d2; font-weight: 500; }
+        .details-row { display: flex; flex-direction: row; align-items: flex-start; margin-bottom: 2.2em; }
+        .details-label { width: 180px; font-weight: bold; font-size: 1.18em; color: #333; }
+        .details-value { flex: 1; font-size: 1.15em; color: #222; word-break: break-word; background: #f5f5f5; padding: 10px 22px; border-radius: 6px; }
+        .details-row-inline { display: flex; flex-direction: row; align-items: center; margin-bottom: 2.2em; }
+        .details-label-inline { width: 180px; font-weight: bold; font-size: 1.18em; color: #333; }
+        .details-value-inline { flex: 1; font-size: 1.15em; color: #222; padding: 0; }
+        .details-status-row { display: flex; flex-direction: row; align-items: center; margin-bottom: 2.2em; }
+        .details-status-label { width: 180px; font-weight: bold; font-size: 1.18em; color: #333; }
+        .details-status-select { font-size: 1.1em; padding: 7px 20px; border-radius: 6px; border: 1px solid #bbb; background: white; color: #222; }
+        .details-meta-row { display: flex; flex-direction: row; align-items: center; gap: 2.5em; color: #888; font-size: 0.97em; margin-top: 2.7em; margin-bottom: 0.4em; }
+        .details-uid { font-size: 0.92em; color: #aaa; }
+        .save-button { background: #1976d2; color: white; border: none; border-radius: 5px; padding: 10px 20px; font-size: 1.1em; cursor: pointer; margin-top: 20px; }
+        .save-button:hover { background: #1565c0; }
+        input[type=text], textarea { width: 100%; font-size: 1.15em; padding: 10px; border-radius: 6px; border: 1px solid #ccc; background: white; }
+        textarea { min-height: 80px; }
+    </style>
+</head>
+<body>
+    <div class="details-container">
+        <div class="details-title-row">
+            <div class="details-title-main">Eintragsdetails</div>
+            <div class="details-title-name">{{ vorname }} {{ name }} <span style="font-size: 0.85em; opacity: 0.8;">({{ bestellnummer }})</span></div>
+        </div>
+        <form method="post">
+            <div class="details-row-inline" style="display: flex; gap: 20px; align-items: flex-start;">
+                <div style="width: 60%;">
+                    <span class="details-label-inline">Name:</span>
+                    <div style="display: flex; gap: 10px;">
+                        <span class="details-value-inline" style="flex: 1;">
+                            <input type="text" name="vorname" value="{{ vorname }}" style="width:95%; padding:8px; border-radius:5px; border:1px solid #ccc;">
+                        </span>
+                        <span class="details-value-inline" style="flex: 1;">
+                            <input type="text" name="name" value="{{ name }}" style="width:95%; padding:8px; border-radius:5px; border:1px solid #ccc;">
+                        </span>
+                    </div>
+                </div>
+                <div style="width: 33%;">
+                    <div class="details-label">Feiertag:</div>
+                    <div class="details-value" style="background: transparent; padding: 0;">
+                        <input type="text" name="feiertag" value="{{ feiertag }}" style="padding:8px; border-radius:5px; border:1px solid #ccc; width: 90%;" placeholder="TT.MM.YYYY">
+                        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">Format: TT.MM.YYYY</div>
+                    </div>
+                </div>
+            </div>
+            <div class="details-row-inline" style="display: flex; gap: 20px; align-items: flex-start; margin-top: -10px;">
+                <div style="width: 60%;">
+                    <div class="details-status-row" style="margin-top: 0;">
+                        <span class="details-status-label">Status:</span>
+                        <select class="details-status-select" name="status">
+                            {% for opt in status_options %}
+                                <option value="{{ opt }}" {% if opt == status %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div style="width: 33%;">
+                    <div class="details-label">Feieruhrzeit:</div>
+                    <div class="details-value" style="background: transparent; padding: 0;">
+                        <input type="text" name="feieruhrzeit" value="{{ feieruhrzeit }}" style="padding:8px; border-radius:5px; border:1px solid #ccc; width: 90%;" placeholder="HH-MM">
+                        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">Format: HH-MM</div>
+                    </div>
+                </div>
+            </div>
+            <div class="details-row" style="margin-top: 10px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <div class="details-label">Hinweis:</div>
+                    <div class="details-value" style="background: transparent; padding: 0; max-width: 800px;">
+                        <textarea name="hint" style="width: 95%;">{{ hint }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <hr/>
+            <div style="margin: 15px 0; color: #333;">
+                <h3 style="margin-bottom: 10px;">Finale Bilder auswählen:</h3>
+                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <label for="final_picture_1" style="display: block; margin-bottom: 5px; font-weight: bold;">Bild 1:</label>
+                        <select name="final_picture_1" id="final_picture_1" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="">-- Kein Bild ausgewählt --</option>
+                            {% for f in image_files %}
+                                <option value="{{ work_path }}/{{ f }}" {% if final_picture_1 == work_path + '/' + f %}selected{% endif %}>{{ f }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="final_picture_2" style="display: block; margin-bottom: 5px; font-weight: bold;">Bild 2:</label>
+                        <select name="final_picture_2" id="final_picture_2" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="">-- Kein Bild ausgewählt --</option>
+                            {% for f in image_files %}
+                                <option value="{{ work_path }}/{{ f }}" {% if final_picture_2 == work_path + '/' + f %}selected{% endif %}>{{ f }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="final_picture_3" style="display: block; margin-bottom: 5px; font-weight: bold;">Bild 3:</label>
+                        <select name="final_picture_3" id="final_picture_3" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="">-- Kein Bild ausgewählt --</option>
+                            {% for f in image_files %}
+                                <option value="{{ work_path }}/{{ f }}" {% if final_picture_3 == work_path + '/' + f %}selected{% endif %}>{{ f }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                    <button type="submit" class="save-button" style="padding: 10px 20px; background-color: #1976d2; color: white; border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer;">Alle Änderungen speichern</button>
+                </div>
+            </div>
+            
+            <h3 style="margin-bottom: 10px;">Dateien: {{ file_count }} gefunden</h3>
+            
+            <!-- Dateiliste mit Größen -->
+            <div style="margin-bottom: 20px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="background-color: #f5f5f5;">
+                        <th style="text-align: left; padding: 5px; border-bottom: 1px solid #ddd;">Dateiname</th>
+                        <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">Größe</th>
+                        <th style="text-align: center; padding: 5px; border-bottom: 1px solid #ddd;">Dimensionen</th>
+                        <th style="text-align: center; padding: 5px; border-bottom: 1px solid #ddd;">DPI</th>
+                    </tr>
+                    {% if files %}
+                        {% for file in files %}
+                        <tr>
+                            <td style="padding: 5px; border-bottom: 1px solid #eee;">{{ file.name }}</td>
+                            <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{{ file.size }} KB</td>
+                            <td style="text-align: center; padding: 5px; border-bottom: 1px solid #eee;">{{ file.width }} x {{ file.height }}</td>
+                            <td style="text-align: center; padding: 5px; border-bottom: 1px solid #eee;">{{ file.dpi_x }} x {{ file.dpi_y }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="4" style="color: #888; padding: 5px;">Keine Dateien vorhanden</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+            
+            <!-- Bildergalerie mit Toggle-Button für Bildgröße -->
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin-bottom: 0; margin-right: 15px;">Bildergalerie:</h3>
+                {% if full_size %}
+                    <button onclick='window.location.href = window.location.href.replace("&full_size=1", "");' style='padding: 5px 10px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;'>Thumbnail anzeigen</button>
+                {% else %}
+                    <button onclick="window.location.href = window.location.href + '&full_size=1';" style="padding: 5px 10px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Originalgröße anzeigen</button>
+                {% endif %}
+            </div>
+            
+            <div id="imageGallery" style="display: flex; flex-direction: column; gap: 15px;">
+                {% if image_files %}
+                    {% for f in image_files %}
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <img src="/image/{{ entry_id }}/{{ f }}" class="gallery-image" style="max-width: {% if full_size %}none{% else %}400px{% endif %}; max-height: {% if full_size %}none{% else %}400px{% endif %}; object-fit: contain; margin-right: 15px;">
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <div style="font-size: 0.9em;">{{ f }}</div>
+                            <div style="display: flex; gap: 10px;">
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" onclick="document.getElementById('final_picture_1').value='{{ work_path }}/{{ f }}'; scrollToTop();" style="padding: 3px 8px; background-color: {% if final_picture_1 == work_path + '/' + f %}#007bff{% else %}#f0f0f0{% endif %}; color: {% if final_picture_1 == work_path + '/' + f %}white{% else %}black{% endif %}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
+                                        Bild 1{% if final_picture_1 == work_path + '/' + f %} ✓{% endif %}</button>
+                                    <button type="button" onclick="document.getElementById('final_picture_2').value='{{ work_path }}/{{ f }}'; scrollToTop();" style="padding: 3px 8px; background-color: {% if final_picture_2 == work_path + '/' + f %}#007bff{% else %}#f0f0f0{% endif %}; color: {% if final_picture_2 == work_path + '/' + f %}white{% else %}black{% endif %}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
+                                        Bild 2{% if final_picture_2 == work_path + '/' + f %} ✓{% endif %}</button>
+                                    <button type="button" onclick="document.getElementById('final_picture_3').value='{{ work_path }}/{{ f }}'; scrollToTop();" style="padding: 3px 8px; background-color: {% if final_picture_3 == work_path + '/' + f %}#007bff{% else %}#f0f0f0{% endif %}; color: {% if final_picture_3 == work_path + '/' + f %}white{% else %}black{% endif %}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
+                                        Bild 3{% if final_picture_3 == work_path + '/' + f %} ✓{% endif %}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="color: #888;">Keine Bilder vorhanden</div>
+                {% endif %}
+            </div>
+        </div>
+        <hr/>
+        <div style="margin-top: 2.7em; margin-bottom: 0.4em; color: #888; font-size: 0.97em;">
+            <div style="margin-bottom: 8px;">Quell Path: {{ src_path }}</div>
+            <div style="margin-bottom: 8px;">Arbeits Path: {{ work_path }}</div>
+            <div style="margin-bottom: 8px;">Final Bild 1: {{ final_picture_1 or '-' }}</div>
+            <div style="margin-bottom: 8px;">Final Bild 2: {{ final_picture_2 or '-' }}</div>
+            <div style="margin-bottom: 8px;">Final Bild 3: {{ final_picture_3 or '-' }}</div>
+            <div class="details-meta-row">
+                <span>Created: {{ created_at }}</span>
+                <span>Updated: {{ updated_at }}</span>
+                <span class="details-uid">UID: {{ uid }}</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
