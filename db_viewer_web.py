@@ -45,10 +45,14 @@ TEMPLATE = '''
         tr:nth-child(even) { background: #f2f2f2; }
         .searchbar { margin-top: 1em; }
         .filter { margin-left: 1em; }
+        .error-message { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
     <h1>Datenbank-Übersicht</h1>
+    {% if db_error %}
+    <div class="error-message">{{ db_error }}</div>
+    {% endif %}
     <p style="font-weight:bold;">{{ rows|length }} Einträge gefunden.</p>
     <form method="get" class="searchbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1em;" id="searchForm">
         <div style="flex:1; min-width:200px; display: flex; align-items: center; gap: 0.5em;">
@@ -141,9 +145,16 @@ TEMPLATE = '''
 '''
 
 def get_db_connection(db_path):
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
+    # Prüfen, ob die Datenbank existiert
+    if not os.path.exists(db_path):
+        return None
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except sqlite3.Error:
+        return None
 
 @app.route("/")
 def index():
@@ -153,43 +164,77 @@ def index():
     feiertag = request.args.get("feiertag", "")
     feieruhrzeit = request.args.get("feieruhrzeit", "")
     has_images = request.args.get("has_images", "")
+    
+    # Prüfen, ob die Datenbank existiert
     conn = get_db_connection(db)
-    cur = conn.cursor()
-    # Status-Optionen
-    cur.execute(f"SELECT DISTINCT status FROM {TABLE} ORDER BY status")
-    status_options = [row[0] for row in cur.fetchall() if row[0]]
-    # Feiertag-Optionen
-    cur.execute(f"SELECT DISTINCT feiertag FROM {TABLE} ORDER BY feiertag")
-    feiertag_options = [row[0] for row in cur.fetchall() if row[0]]
-    # Feieruhrzeit-Optionen
-    cur.execute(f"SELECT DISTINCT feieruhrzeit FROM {TABLE} ORDER BY feieruhrzeit")
-    feieruhrzeit_options = [row[0] for row in cur.fetchall() if row[0]]
-    # Query
-    sql = f"SELECT * FROM {TABLE}"
-    params = []
-    where = []
-    if q:
-        where.append("(bestellnummer LIKE ? OR name LIKE ? OR vorname LIKE ? OR status LIKE ?)")
-        params += [f"%{q}%"] * 4
-    if status:
-        where.append("status = ?")
-        params.append(status)
-    if feiertag:
-        where.append("feiertag = ?")
-        params.append(feiertag)
-    if feieruhrzeit:
-        where.append("feieruhrzeit = ?")
-        params.append(feieruhrzeit)
-    if has_images == "yes":
-        where.append("work_path IS NOT NULL AND work_path != ''")
-    elif has_images == "no":
-        where.append("(work_path IS NULL OR work_path = '')")
-    if where:
-        sql += " WHERE " + " AND ".join(where)
-    sql += " ORDER BY id DESC"
-    cur.execute(sql, params)
-    rows = cur.fetchall()
-    conn.close()
+    if conn is None:
+        return render_template_string(
+            TEMPLATE,
+            rows=[],
+            q=q,
+            status=status,
+            status_options=[],
+            feiertag=feiertag,
+            feiertag_options=[],
+            feieruhrzeit=feieruhrzeit,
+            feieruhrzeit_options=[],
+            has_images=has_images,
+            db=db,
+            db_error=f"Die Datenbank '{db}' wurde nicht gefunden oder konnte nicht geöffnet werden."
+        )
+    
+    try:
+        cur = conn.cursor()
+        # Status-Optionen
+        cur.execute(f"SELECT DISTINCT status FROM {TABLE} ORDER BY status")
+        status_options = [row[0] for row in cur.fetchall() if row[0]]
+        # Feiertag-Optionen
+        cur.execute(f"SELECT DISTINCT feiertag FROM {TABLE} ORDER BY feiertag")
+        feiertag_options = [row[0] for row in cur.fetchall() if row[0]]
+        # Feieruhrzeit-Optionen
+        cur.execute(f"SELECT DISTINCT feieruhrzeit FROM {TABLE} ORDER BY feieruhrzeit")
+        feieruhrzeit_options = [row[0] for row in cur.fetchall() if row[0]]
+        # Query
+        sql = f"SELECT * FROM {TABLE}"
+        params = []
+        where = []
+        if q:
+            where.append("(bestellnummer LIKE ? OR name LIKE ? OR vorname LIKE ? OR status LIKE ?)")
+            params += [f"%{q}%"] * 4
+        if status:
+            where.append("status = ?")
+            params.append(status)
+        if feiertag:
+            where.append("feiertag = ?")
+            params.append(feiertag)
+        if feieruhrzeit:
+            where.append("feieruhrzeit = ?")
+            params.append(feieruhrzeit)
+        if has_images == "yes":
+            where.append("work_path IS NOT NULL AND work_path != ''")
+        elif has_images == "no":
+            where.append("(work_path IS NULL OR work_path = '')")
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY id DESC"
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        conn.close()
+    except sqlite3.Error as e:
+        return render_template_string(
+            TEMPLATE,
+            rows=[],
+            q=q,
+            status=status,
+            status_options=[],
+            feiertag=feiertag,
+            feiertag_options=[],
+            feieruhrzeit=feieruhrzeit,
+            feieruhrzeit_options=[],
+            has_images=has_images,
+            db=db,
+            db_error=f"Fehler beim Zugriff auf die Tabelle '{TABLE}' in der Datenbank '{db}'."
+        )
     return render_template_string(
         TEMPLATE,
         rows=rows,
@@ -201,20 +246,29 @@ def index():
         feieruhrzeit=feieruhrzeit,
         feieruhrzeit_options=feieruhrzeit_options,
         has_images=has_images,
-        db=db
+        db=db,
+        db_error=None
     )
 
 
 @app.route("/details/<int:entry_id>", methods=["GET", "POST"])
 def details(entry_id):
     db = request.args.get("db") or DB_PATH
+    
+    # Prüfen, ob die Datenbank existiert
     conn = get_db_connection(db)
-    cur = conn.cursor()
-    cur.execute(f"SELECT * FROM {TABLE} WHERE id = ?", (entry_id,))
-    row = cur.fetchone()
-    conn.close()
-    if not row:
-        return '<h2>Eintrag nicht gefunden</h2>', 404
+    if conn is None:
+        return f'<h2>Die Datenbank "{db}" wurde nicht gefunden oder konnte nicht geöffnet werden.</h2>', 404
+    
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM {TABLE} WHERE id = ?", (entry_id,))
+        row = cur.fetchone()
+        conn.close()
+        if not row:
+            return '<h2>Eintrag nicht gefunden</h2>', 404
+    except sqlite3.Error as e:
+        return f'<h2>Fehler beim Zugriff auf die Tabelle "{TABLE}" in der Datenbank "{db}".</h2>', 404
     # Felder extrahieren
     bestellnummer = row[1]
     vorname = row[3]
@@ -487,14 +541,22 @@ def details(entry_id):
 def serve_image(entry_id, filename):
     # Get the entry's work_path from the database
     db = request.args.get("db") or DB_PATH
-    conn = get_db_connection(db)
-    cur = conn.cursor()
-    cur.execute(f"SELECT work_path FROM {TABLE} WHERE id = ?", (entry_id,))
-    row = cur.fetchone()
-    conn.close()
     
-    if not row or not row[0]:
-        return "Image not found", 404
+    # Prüfen, ob die Datenbank existiert
+    conn = get_db_connection(db)
+    if conn is None:
+        return "Database not found", 404
+    
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT work_path FROM {TABLE} WHERE id = ?", (entry_id,))
+        row = cur.fetchone()
+        conn.close()
+        
+        if not row or not row[0]:
+            return "Image not found", 404
+    except sqlite3.Error as e:
+        return "Database error", 404
     
     work_path = row[0]
     image_path = os.path.join(work_path, filename)

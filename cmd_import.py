@@ -19,7 +19,7 @@ def read_excel_data(file_path):
         pandas.DataFrame: DataFrame mit den extrahierten Daten
     """
     # Excel-Datei ohne Header einlesen und Datumskonvertierung deaktivieren
-    df = pd.read_excel(file_path, header=None, parse_dates=False)
+    df = pd.read_excel(file_path, header=None, parse_dates=False, sheet_name=1)
     
     # Überprüfe, ob die Datei Daten enthält
     if df.empty:
