@@ -294,7 +294,7 @@ if __name__ == "__main__":
     if not args.command:
         print("Error: No command specified. Use 'python dbv_autoimgcov.py -h' for help.")
         
-        
+        '''
         print(execute_autoconvert('./temp/Bild1.jpg', './temp/result/Bild1_.jpg', "1ee Hallo-Text Bild1Modi"))
         print(execute_autoconvert('./temp/Bild2.jpg', './temp/result/Bild2_.jpg', "Hallo Textadasd Bild1Modi"))
         print(execute_autoconvert('./temp/Bild3.jpg', './temp/result/Bild3_.jpg', "Hallo-Textddd Bild1Modi"))
@@ -303,6 +303,7 @@ if __name__ == "__main__":
         print(execute_autoconvert('./temp/Bild2.jpg', './temp/result/Bild6_.jpg', "Hallo Textadasdsdf Bild1Modi"))
         print(execute_autoconvert('./temp/Bild3.jpg', './temp/result/Bild7_.jpg', "HalloTesdftddd Bild1Modi"))
         print(execute_autoconvert('./temp/Bild4.jpg', './temp/result/Bild8_.jpg', "Hsdfallo Textad Bild1Modi"))
+        '''
         sys.exit(1)
         
     if args.command == 'auto':
