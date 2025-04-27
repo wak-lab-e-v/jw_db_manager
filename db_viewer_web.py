@@ -3,6 +3,7 @@ import sqlite3
 import os
 import subprocess
 from PIL import Image
+import piexif
 
 def get_image_info(file_path):
     """Extract image dimensions and DPI information from an image file"""
@@ -444,6 +445,142 @@ def delete_image():
                 </head>
                 <body>
                     <h2>Fehler beim Löschen der Datei</h2>
+                    <p>Fehlermeldung: {str(e)}</p>
+                    <p><a href='{request.referrer}'>Zurück zur vorherigen Seite</a></p>
+                </body>
+            </html>"""
+
+@app.route("/rotate_image")
+def rotate_image():
+    file_path = request.args.get("file")
+    angle = int(request.args.get("angle", 0))
+    
+    # Überprüfen, ob die Datei existiert
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        return f"<h2>Fehler: Die Datei '{file_path}' wurde nicht gefunden.</h2>", 404
+    
+    try:
+        # Debug-Meldungen ausgeben
+        print("\n==== BILD ROTATION GESTARTET ====")
+        print(f"Datei: {file_path}")
+        print(f"Winkel: {angle}")
+        
+        # dbv_rotateexif.py mit den entsprechenden Parametern aufrufen
+        cmd = ["python", "dbv_rotateexif.py", file_path, file_path, str(angle)]
+        
+        print(f"Ausgeführter Befehl: {' '.join(cmd)}")
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        print(f"Rückgabecode: {result.returncode}")
+        print(f"Ausgabe: {result.stdout}")
+        print(f"Fehler: {result.stderr}")
+        print("==== BILD ROTATION BEENDET ====")
+        
+        if result.returncode == 0:
+            # Zurück zur Detailseite
+            entry_id = request.referrer.split("/")[-1].split("?")[0] if request.referrer else ""
+            db = request.args.get("db") or DB_PATH
+            
+            # Direkt zur Detailseite zurückkehren
+            return f"""<html>
+                    <head>
+                        <meta http-equiv='refresh' content='0;url=/details/{entry_id}?db={db}'>
+                        <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                    </head>
+                    <body>
+                        <h2>Bild wurde erfolgreich rotiert!</h2>
+                        <p>Sie werden weitergeleitet...</p>
+                        <p><a href='/details/{entry_id}?db={db}'>Klicken Sie hier, wenn Sie nicht automatisch weitergeleitet werden.</a></p>
+                    </body>
+                </html>"""
+        else:
+            # Fehler anzeigen
+            return f"""<html>
+                    <head>
+                        <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                    </head>
+                    <body>
+                        <h2>Fehler bei der Bildrotation</h2>
+                        <p>Fehlermeldung: {result.stderr}</p>
+                        <p><a href='{request.referrer}'>Zurück zur vorherigen Seite</a></p>
+                    </body>
+                </html>"""
+    except Exception as e:
+        return f"""<html>
+                <head>
+                    <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                </head>
+                <body>
+                    <h2>Fehler bei der Bildrotation</h2>
+                    <p>Fehlermeldung: {str(e)}</p>
+                    <p><a href='{request.referrer}'>Zurück zur vorherigen Seite</a></p>
+                </body>
+            </html>"""
+
+@app.route("/convert_psd")
+def convert_psd():
+    source_file = request.args.get("source_file")
+    destination_file = request.args.get("destination_file")
+    
+    # Überprüfen, ob die Quelldatei existiert
+    if not os.path.exists(source_file) or not os.path.isfile(source_file):
+        return f"<h2>Fehler: Die Quelldatei '{source_file}' wurde nicht gefunden.</h2>", 404
+    
+    try:
+        # Debug-Meldungen ausgeben
+        print("\n==== PSD KONVERTIERUNG GESTARTET ====")
+        print(f"Quelldatei: {source_file}")
+        print(f"Zieldatei: {destination_file}")
+        
+        # dbv_psdconvert.py mit den entsprechenden Parametern aufrufen
+        cmd = ["python", "dbv_psdconvert.py", source_file, destination_file]
+        
+        print(f"Ausgeführter Befehl: {' '.join(cmd)}")
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        print(f"Rückgabecode: {result.returncode}")
+        print(f"Ausgabe: {result.stdout}")
+        print(f"Fehler: {result.stderr}")
+        print("==== PSD KONVERTIERUNG BEENDET ====")
+        
+        if result.returncode == 0:
+            # Zurück zur Detailseite
+            entry_id = request.referrer.split("/")[-1].split("?")[0] if request.referrer else ""
+            db = request.args.get("db") or DB_PATH
+            
+            # Direkt zur Detailseite zurückkehren
+            return f"""<html>
+                    <head>
+                        <meta http-equiv='refresh' content='0;url=/details/{entry_id}?db={db}'>
+                        <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                    </head>
+                    <body>
+                        <h2>PSD-Datei wurde erfolgreich konvertiert!</h2>
+                        <p>Sie werden weitergeleitet...</p>
+                        <p><a href='/details/{entry_id}?db={db}'>Klicken Sie hier, wenn Sie nicht automatisch weitergeleitet werden.</a></p>
+                    </body>
+                </html>"""
+        else:
+            # Fehler anzeigen
+            return f"""<html>
+                    <head>
+                        <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                    </head>
+                    <body>
+                        <h2>Fehler bei der PSD-Konvertierung</h2>
+                        <p>Fehlermeldung: {result.stderr or result.stdout}</p>
+                        <p><a href='{request.referrer}'>Zurück zur vorherigen Seite</a></p>
+                    </body>
+                </html>"""
+    except Exception as e:
+        return f"""<html>
+                <head>
+                    <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                </head>
+                <body>
+                    <h2>Fehler bei der PSD-Konvertierung</h2>
                     <p>Fehlermeldung: {str(e)}</p>
                     <p><a href='{request.referrer}'>Zurück zur vorherigen Seite</a></p>
                 </body>
