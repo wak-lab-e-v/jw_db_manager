@@ -158,7 +158,8 @@ def process_image(image_path, person_name, shift_right=True):
             # Wrap the name by inserting newlines at spaces
             wrapped_name = ""
             max_chars_per_line = 10  # Adjust based on font size
-            words = person_name.split()
+            
+            words = person_name.replace('-','- ').split()
             current_line = words[0]
             
             for word in words[1:]:
@@ -181,7 +182,7 @@ def process_image(image_path, person_name, shift_right=True):
         # Bild vorbereiten
         if is_vertical: 
             # Calculate the position to paste the image (35% shift - increased from 25%)
-            shift_amount = int((1920 - new_width - text_width) * 0.25)  # More room for text
+            shift_amount = int((1920 - new_width - text_width - 2*horizontal_text_pos) * 0.25)  # More room for text
             
             if shift_right:
                 # Shift image to the right with margin, text will be on the left
