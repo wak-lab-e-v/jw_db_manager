@@ -15,6 +15,7 @@ pip install Flask>=2.0.0
 Optional ein Datenbakbrowser
 ```bash
 sudo apt install sqlitebrowswer
+sudo apt install python3-piexif
 ```
 
 ## Verwendung
