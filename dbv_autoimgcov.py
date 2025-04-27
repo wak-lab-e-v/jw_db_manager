@@ -146,42 +146,15 @@ def process_image(image_path, person_name, shift_right=True):
         new_width = int(width * ratio)
         new_height = 1080
         resized_img = img.resize((new_width, new_height), Image.LANCZOS)
-
-        if is_vertical: 
-            # Calculate the position to paste the image (35% shift - increased from 25%)
-            shift_amount = int(1920 * 0.35)  # More room for text
-            
-            if shift_right:
-                # Shift image to the right with margin, text will be on the left
-                paste_position = (1920 - new_width - vertical_text_pos, 0)  # 80px margin from right edge
-                text_position = (1920 // 2, 1080 - vertical_text_pos)  # Position closer to bottom
-                text_align = "center"
-            else:
-                # Shift image to the left with margin, text will be on the right
-                paste_position = (vertical_text_pos, 0)  # 80px margin from left edge
-                text_position = (1920 // 2, 1080 - vertical_text_pos)  # Position closer to bottom
-                text_align = "center"
-        else:
-            # Center the image vertically
-            paste_position = ((1920 - new_width) // 2, 0)
-            text_position = (1920 // 2, 1080 - horizontal_text_pos)  # Position closer to bottom
-            text_align = "center"
         
-        # Paste the resized image onto the canvas
-        canvas.paste(resized_img, paste_position)
-        
+        # Text Vorbereiten
         # Add text with semi-transparent background
         draw = ImageDraw.Draw(canvas)
         font = load_font(default_font_size)
         font_size = font.size
         
-        # Calculate text size (compatible with newer Pillow versions)
-        text_width, text_height = calcTextSize(font, person_name, default_font_line_spacing)
-
-       
+        
         if is_vertical:
-            # For vertical images, place text on the side (opposite to the image shift) without a gray bar
-            
             # Wrap the name by inserting newlines at spaces
             wrapped_name = ""
             max_chars_per_line = 10  # Adjust based on font size
@@ -200,6 +173,39 @@ def process_image(image_path, person_name, shift_right=True):
             # Use the wrapped name instead of the original
             person_name = wrapped_name
             text_width, text_height = calcTextSize(font, wrapped_name, default_font_line_spacing)
+        else:
+            # Calculate text size (compatible with newer Pillow versions)
+            text_width, text_height = calcTextSize(font, person_name, default_font_line_spacing)
+        
+        
+        # Bild vorbereiten
+        if is_vertical: 
+            # Calculate the position to paste the image (35% shift - increased from 25%)
+            shift_amount = int((1920 - new_width - text_width) * 0.25)  # More room for text
+            
+            if shift_right:
+                # Shift image to the right with margin, text will be on the left
+                paste_position = (1920 - new_width - vertical_text_pos - shift_amount, 0)  # 80px margin from right edge
+                text_position = (1920 // 2, 1080 - vertical_text_pos)  # Position closer to bottom
+                text_align = "center"
+            else:
+                # Shift image to the left with margin, text will be on the right
+                paste_position = (vertical_text_pos + shift_amount, 0)  # 80px margin from left edge
+                text_position = (1920 // 2, 1080 - vertical_text_pos)  # Position closer to bottom
+                text_align = "center"
+        else:
+            # Center the image vertically
+            paste_position = ((1920 - new_width) // 2, 0)
+            text_position = (1920 // 2, 1080 - horizontal_text_pos)  # Position closer to bottom
+            text_align = "center"
+        
+        # Paste the resized image onto the canvas
+        canvas.paste(resized_img, paste_position)
+        
+
+       
+        if is_vertical:
+            # For vertical images, place text on the side (opposite to the image shift) without a gray bar
                
             if shift_right:
                 # Image is on the right with margin, so text goes on the left side
@@ -215,7 +221,7 @@ def process_image(image_path, person_name, shift_right=True):
             text_bg_height = int(text_height + padding_vertical*2 - font_size * 0.2) # Height of the background
             text_bg_width = int(text_width + padding_horizontal * 2)    # Width of the background
             text_bg = Image.new('RGBA', (text_bg_width, text_bg_height), (80, 80, 80, 168))  # Darker gray with opacity
-            canvas.paste(text_bg, (text_x - padding_horizontal, text_y + padding_vertical), text_bg)
+            #canvas.paste(text_bg, (text_x - padding_horizontal, text_y + padding_vertical), text_bg)
             
         else: # QUER
             # For horizontal images, place text at the bottom
@@ -294,16 +300,10 @@ if __name__ == "__main__":
     if not args.command:
         print("Error: No command specified. Use 'python dbv_autoimgcov.py -h' for help.")
         
-        '''
-        print(execute_autoconvert('./temp/Bild1.jpg', './temp/result/Bild1_.jpg', "1ee Hallo-Text Bild1Modi"))
-        print(execute_autoconvert('./temp/Bild2.jpg', './temp/result/Bild2_.jpg', "Hallo Textadasd Bild1Modi"))
-        print(execute_autoconvert('./temp/Bild3.jpg', './temp/result/Bild3_.jpg', "Hallo-Textddd Bild1Modi"))
-        print(execute_autoconvert('./temp/Bild4.jpg', './temp/result/Bild4_.jpg', "Hallodsfsd Textad Bisdld1Modi"))
-        print(execute_autoconvert('./temp/Bild1.jpg', './temp/result/Bild5_.jpg', "Hallo-Text Bild1Modi"))
-        print(execute_autoconvert('./temp/Bild2.jpg', './temp/result/Bild6_.jpg', "Hallo Textadasdsdf Bild1Modi"))
-        print(execute_autoconvert('./temp/Bild3.jpg', './temp/result/Bild7_.jpg', "HalloTesdftddd Bild1Modi"))
-        print(execute_autoconvert('./temp/Bild4.jpg', './temp/result/Bild8_.jpg', "Hsdfallo Textad Bild1Modi"))
-        '''
+        
+        print(execute_autoconvert('../source/h.jpg', '../source/h1.jpg', "Tobi Dietzel"))
+        print(execute_autoconvert('../source/q.jpg', '../source/q1.jpg', "Tobi Dietzel"))
+        
         sys.exit(1)
         
     if args.command == 'auto':
