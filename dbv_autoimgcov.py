@@ -12,8 +12,8 @@ padding_horizontal = 20  # Horizontal padding for side text
 darker_gray = (80, 80, 80, 168)  # Darker gray with higher opacity
 shadow_color = (0, 0, 0,168 )     # Schwarz
 
-default_font_size = 150  # Extremely large font size
-default_font_line_spacing  = 42
+default_font_size = 120  # Extremely large font size
+default_font_line_spacing  = 32
 horizontal_text_pos = 50
 vertical_text_pos = 100
 text_y_offset = 5
@@ -222,7 +222,7 @@ def process_image(image_path, person_name, shift_right=True):
             text_bg_height = int(text_height + padding_vertical*2 - font_size * 0.2) # Height of the background
             text_bg_width = int(text_width + padding_horizontal * 2)    # Width of the background
             text_bg = Image.new('RGBA', (text_bg_width, text_bg_height), (80, 80, 80, 168))  # Darker gray with opacity
-            #canvas.paste(text_bg, (text_x - padding_horizontal, text_y + padding_vertical), text_bg)
+            canvas.paste(text_bg, (text_x - padding_horizontal, text_y + padding_vertical), text_bg)
             
         else: # QUER
             # For horizontal images, place text at the bottom
