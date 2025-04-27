@@ -35,8 +35,8 @@ def check_pictures(db_manager, target_path=None, operation=None):
     try:
         db_manager.connect()
         
-        # Hole alle Einträge mit nicht-leerem src_path
-        db_manager.cursor.execute("SELECT id, name, vorname, src_path, feiertag, feieruhrzeit, bestellnummer FROM anmeldungen WHERE src_path != '' AND src_path IS NOT NULL")
+        # Hole alle Einträge mit nicht-leerem src_path, einschließlich der Location-Spalte
+        db_manager.cursor.execute("SELECT id, name, vorname, src_path, feiertag, feieruhrzeit, bestellnummer, location FROM anmeldungen WHERE src_path != '' AND src_path IS NOT NULL")
         entries = db_manager.cursor.fetchall()
         
         if not entries:
@@ -60,7 +60,7 @@ def check_pictures(db_manager, target_path=None, operation=None):
         image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tif', '.tiff', '.jfif']
         
         # Iteriere über alle Einträge
-        for entry_id, name, vorname, src_path, feiertag, feieruhrzeit, bestellnummer in entries:
+        for entry_id, name, vorname, src_path, feiertag, feieruhrzeit, bestellnummer, location in entries:
             # Prüfe, ob das Verzeichnis existiert
             if not os.path.exists(src_path):
                 print(f"Verzeichnis nicht gefunden: ID {entry_id}, {vorname} {name}, Pfad: {src_path}")
@@ -167,8 +167,17 @@ def check_pictures(db_manager, target_path=None, operation=None):
                 # Wenn target_path angegeben ist, verschiebe oder kopiere die Bilder
                 if target_path:
                     # Erstelle die Verzeichnisstruktur
-                    # Feiertag/Feieruhrzeit/Vorname_Nachname_Bestellnummer
-                    feiertag_dir = feiertag.replace('/', '-').replace('\\', '-') if feiertag else "Unbekannt"
+                    # Feiertag_Location/Feieruhrzeit/Vorname_Nachname_Bestellnummer
+                    
+                    # Bereinige die Location (falls vorhanden) für die Verwendung im Verzeichnisnamen
+                    location_clean = location.replace('/', '-').replace('\\', '-') if location else ""
+                    
+                    # Erstelle den Feiertag-Verzeichnisnamen mit Location
+                    if feiertag and location_clean:
+                        feiertag_dir = f"{feiertag.replace('/', '-').replace('\\', '-')}_{location_clean}"
+                    else:
+                        feiertag_dir = feiertag.replace('/', '-').replace('\\', '-') if feiertag else "Unbekannt"
+                    
                     feieruhrzeit_dir = feieruhrzeit.replace('/', '-').replace('\\', '-') if feieruhrzeit else "Unbekannt"
                     person_dir = f"{vorname}_{name}_{bestellnummer}".replace('/', '-').replace('\\', '-')
                     

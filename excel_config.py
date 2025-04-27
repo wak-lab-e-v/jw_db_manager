@@ -4,20 +4,6 @@ Diese Datei definiert die Zuordnung zwischen den Spaltennamen in der Excel-Datei
 und den Variablennamen, die im Code verwendet werden.
 """
 
-# Mapping von Spaltenindizes zu Namen (basierend auf der aktuellen Excel-Datei)
-EXCEL_HEADER_MAPPING = {
-    "BESTELLNUMMER": 3,       # "Bestellnumer" in der Excel-Datei
-    "NAME": 6,                # "Name" in der Excel-Datei
-    "VORNAME": 7,             # "Vorname" in der Excel-Datei
-    "FEIERTAG": 17,           # "Feiertag" in der Excel-Datei
-    "FEIERUHRZEIT": 18,       # "Feieruhrzeit" in der Excel-Datei
-    "BILDER_DA": 31,          # "Bilder da" in der Excel-Datei
-    "BILDERABGABE_WIE": 32,   # "Bilderabgabe wie" in der Excel-Datei
-}
-
-# Umgekehrtes Mapping (von Namen zu Spaltenindizes)
-EXCEL_COLUMN_INDICES = {v: k for k, v in EXCEL_HEADER_MAPPING.items()}
-
 # Funktion zum Aktualisieren der Indizes, falls sich die Spaltenreihenfolge ändert
 def update_indices(df):
     """
@@ -51,5 +37,7 @@ def update_indices(df):
             updated_mapping["BILDER_DA"] = col_idx
         elif col_name == "Bilderabgabe wie":
             updated_mapping["BILDERABGABE_WIE"] = col_idx
+        elif col_name == "Location":
+            updated_mapping["LOCATION"] = col_idx
     
     return updated_mapping

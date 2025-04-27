@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS anmeldungen (
     uid TEXT NOT NULL,                 -- Aus Excel: UID (crc32 von name + vorname + bestellnummer)
     feiertag TEXT,                     -- Aus Excel: Feiertag
     feieruhrzeit TEXT,                 -- Aus Excel: Feieruhrzeit
+    Location TEXT,                     -- Zusätzlich: Ort
     hint TEXT,                         -- Zusätzlich: Hinweise zu Fehlern oder Problemen
     src_path TEXT,                     -- Zusätzlich: Quellpfad zu zugehörigen Dateien
     work_path TEXT,                    -- Zusätzlich: Relativer Pfad zu zugehörigen Dateien

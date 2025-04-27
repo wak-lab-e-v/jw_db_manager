@@ -31,8 +31,8 @@ def check_source_directories(db_manager, path_prefix):
     try:
         db_manager.connect()
         
-        # Hole alle Einträge mit leerem src_path
-        db_manager.cursor.execute("SELECT id, feiertag, name, vorname FROM anmeldungen WHERE src_path = '' OR src_path IS NULL")
+        # Hole alle Einträge mit leerem src_path, einschließlich der Location-Spalte
+        db_manager.cursor.execute("SELECT id, feiertag, name, vorname, location FROM anmeldungen WHERE src_path = '' OR src_path IS NULL")
         entries = db_manager.cursor.fetchall()
         
         if not entries:
@@ -46,7 +46,7 @@ def check_source_directories(db_manager, path_prefix):
         not_found_count = 0
         
         # Iteriere über alle Einträge
-        for entry_id, feiertag, name, vorname in entries:
+        for entry_id, feiertag, name, vorname, location in entries:
             # Extrahiere nur das Datum aus dem Feiertag (falls es ein Datum mit Uhrzeit ist)
             if feiertag and ' ' in feiertag:
                 feiertag = feiertag.split(' ')[0]
@@ -81,7 +81,15 @@ def check_source_directories(db_manager, path_prefix):
                 # Wenn kein gültiges Datum vorhanden ist, verwende den Feiertag direkt
                 date_formats = [feiertag] if feiertag else []
             
-            # Suche nach Verzeichnissen, die das Datum im Namen enthalten
+            # Extrahiere das letzte Wort aus der Location, falls vorhanden
+            location_keyword = ""
+            if location and isinstance(location, str) and location.strip():
+                # Teile die Location an Leerzeichen und nimm das letzte Wort
+                location_words = location.strip().split()
+                if location_words:
+                    location_keyword = location_words[-1].lower()
+            
+            # Suche nach Verzeichnissen, die sowohl das Datum als auch das letzte Wort der Location im Namen enthalten
             found_dir = None
             
             if date_formats:
@@ -89,12 +97,14 @@ def check_source_directories(db_manager, path_prefix):
                 try:
                     for root, dirs, _ in os.walk(path_prefix):
                         for dir_name in dirs:
-                            #print(f"Prüfe Verzeichnis: {dir_name}")
+                            dir_name_lower = dir_name.lower()
                             # Prüfe, ob eines der Datumsformate im Verzeichnisnamen enthalten ist
                             for date_format in date_formats:
+                                # Wenn Location-Keyword vorhanden ist, prüfe ob sowohl Datum als auch Location im Namen enthalten sind
                                 if date_format and date_format in dir_name:
-                                    found_dir = os.path.join(root, dir_name)
-                                    break
+                                    if not location_keyword or location_keyword in dir_name_lower:
+                                        found_dir = os.path.join(root, dir_name)
+                                        break
                             if found_dir:
                                 break
                         if found_dir:
@@ -105,10 +115,10 @@ def check_source_directories(db_manager, path_prefix):
             # Wenn ein Verzeichnis gefunden wurde, aktualisiere src_path
             if found_dir:
                 db_manager.cursor.execute("UPDATE anmeldungen SET src_path = ? WHERE id = ?", (found_dir, entry_id))
-                print(f"Gefunden: ID {entry_id}, {name} {vorname}, Feiertag: {feiertag} -> {found_dir}")
+                print(f"Gefunden: ID {entry_id}, {name} {vorname}, Feiertag: {feiertag}, Location: {location} -> {found_dir}")
                 found_count += 1
             else:
-                print(f"Nicht gefunden: ID {entry_id}, {name} {vorname}, Feiertag: {feiertag}")
+                print(f"Nicht gefunden: ID {entry_id}, {name} {vorname}, Feiertag: {feiertag}, Location: {location}")
                 not_found_count += 1
         
         # Commit die Änderungen

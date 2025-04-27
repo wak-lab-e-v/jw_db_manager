@@ -162,6 +162,9 @@ def import_excel_data(db_manager, excel_path):
                 # Ersetze Doppelpunkte durch Bindestriche
                 feieruhrzeit = feieruhrzeit.replace(':', '-')
             
+            # Location aus Excel-Datei extrahieren, falls vorhanden
+            location = str(row.get('LOCATION', '')) if row.get('LOCATION') is not None else ''
+            
             data = {
                 'bestellnummer': bestellnummer,
                 'name': name,
@@ -169,6 +172,7 @@ def import_excel_data(db_manager, excel_path):
                 'uid': uid,
                 'feiertag': feiertag,
                 'feieruhrzeit': feieruhrzeit,
+                'location': location,  # Neue Spalte Location
                 'hint': '',        # Kein Hinweis, da wir Zeilen mit fehlenden Pflichtfeldern überspringen
                 'src_path': '',    # Standardwert für Quellpfad
                 'work_path': '',    # Standardwert für Arbeitspfad
@@ -176,28 +180,38 @@ def import_excel_data(db_manager, excel_path):
             }
             
             if existing_entry:
-                # Eintrag existiert bereits, prüfe ob feiertag oder feieruhrzeit geändert wurden
-                db_manager.cursor.execute("SELECT feiertag, feieruhrzeit FROM anmeldungen WHERE uid = ?", (uid,))
+                # Eintrag existiert bereits, prüfe ob feiertag, feieruhrzeit oder location geändert wurden
+                db_manager.cursor.execute("SELECT feiertag, feieruhrzeit, location FROM anmeldungen WHERE uid = ?", (uid,))
                 db_entry = db_manager.cursor.fetchone()
                 
-                if db_entry and (db_entry[0] != feiertag or db_entry[1] != feieruhrzeit):
-                    # Feierzeit oder Feiertag haben sich geändert
-                    warning_message = f"WARNUNG: Für {name} {vorname} (Bestellnr. {bestellnummer}) hat sich die Feierzeit im XLS geändert!"
-                    print(warning_message)
+                if db_entry:
+                    changes = []
+                    if db_entry[0] != feiertag:
+                        changes.append("Feiertag")
+                    if db_entry[1] != feieruhrzeit:
+                        changes.append("Feieruhrzeit")
+                    if db_entry[2] != location:
+                        changes.append("Location")
                     
-                    # Update den Hint in der Datenbank
-                    hint_message = "Achtung, Feierzeit im XLS verändert!"
-                    db_manager.cursor.execute("UPDATE anmeldungen SET hint = ? WHERE uid = ?", (hint_message, uid))
+                    if changes:
+                        # Daten haben sich geändert
+                        warning_message = f"WARNUNG: Für {name} {vorname} (Bestellnr. {bestellnummer}) haben sich folgende Daten im XLS geändert: {', '.join(changes)}"
+                        print(warning_message)
+                        
+                        # Update den Hint und die geänderten Felder in der Datenbank
+                        hint_message = f"Achtung, {', '.join(changes)} im XLS verändert!"
+                        db_manager.cursor.execute("UPDATE anmeldungen SET feiertag = ?, feieruhrzeit = ?, location = ?, hint = ? WHERE uid = ?", 
+                                               (feiertag, feieruhrzeit, location, hint_message, uid))
                     
                 updated_count += 1
             else:
                 # Neuen Eintrag einfügen
                 sql = '''
                 INSERT INTO anmeldungen (
-                    bestellnummer, name, vorname, uid, feiertag, feieruhrzeit, 
+                    bestellnummer, name, vorname, uid, feiertag, feieruhrzeit, location,
                     hint, src_path, work_path, status
                 ) VALUES (
-                    :bestellnummer, :name, :vorname, :uid, :feiertag, :feieruhrzeit,
+                    :bestellnummer, :name, :vorname, :uid, :feiertag, :feieruhrzeit, :location,
                     :hint, :src_path, :work_path, :status
                 )
                 '''
