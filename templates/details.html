@@ -162,15 +162,15 @@
                         <img src="/image/{{ entry_id }}/{{ f }}" class="gallery-image" style="max-width: {% if full_size %}none{% else %}400px{% endif %}; max-height: {% if full_size %}none{% else %}400px{% endif %}; object-fit: contain; margin-right: 15px;">
                         <div style="display: flex; flex-direction: column; gap: 5px;">
                             <div style="font-size: 0.9em;">{{ f }}</div>
-                            <div style="display: flex; gap: 10px;">
-                                <div style="display: flex; gap: 10px;">
-                                    <button type="button" onclick="document.getElementById('final_picture_1').value='{{ work_path }}/{{ f }}'; scrollToTop();" style="padding: 3px 8px; background-color: {% if final_picture_1 == work_path + '/' + f %}#007bff{% else %}#f0f0f0{% endif %}; color: {% if final_picture_1 == work_path + '/' + f %}white{% else %}black{% endif %}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
-                                        Bild 1{% if final_picture_1 == work_path + '/' + f %} ✓{% endif %}</button>
-                                    <button type="button" onclick="document.getElementById('final_picture_2').value='{{ work_path }}/{{ f }}'; scrollToTop();" style="padding: 3px 8px; background-color: {% if final_picture_2 == work_path + '/' + f %}#007bff{% else %}#f0f0f0{% endif %}; color: {% if final_picture_2 == work_path + '/' + f %}white{% else %}black{% endif %}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
-                                        Bild 2{% if final_picture_2 == work_path + '/' + f %} ✓{% endif %}</button>
-                                    <button type="button" onclick="document.getElementById('final_picture_3').value='{{ work_path }}/{{ f }}'; scrollToTop();" style="padding: 3px 8px; background-color: {% if final_picture_3 == work_path + '/' + f %}#007bff{% else %}#f0f0f0{% endif %}; color: {% if final_picture_3 == work_path + '/' + f %}white{% else %}black{% endif %}; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
-                                        Bild 3{% if final_picture_3 == work_path + '/' + f %} ✓{% endif %}</button>
-                                </div>
+                            <div style="margin-top: 8px; display: flex; gap: 10px;">
+                                <a href="/convert_image?source_file={{ work_path }}/{{ f }}&destination_file={{ work_path }}/{{ f.split('.')[0] }}_auto.{{ f.split('.')[-1] }}&text={{ vorname }} {{ name }}" class="convert-button" style="display: inline-block; padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                    Bild konvertieren
+                                </a>
+                                {% if '_auto.' in f %}
+                                <a href="/delete_image?file={{ work_path }}/{{ f }}" class="delete-button" style="display: inline-block; padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                    Löschen
+                                </a>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

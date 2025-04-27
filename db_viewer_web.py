@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, Response
 import sqlite3
 import os
+import subprocess
 from PIL import Image
 
 def get_image_info(file_path):
@@ -316,6 +317,137 @@ def serve_image(entry_id, filename):
         image_data = f.read()
     
     return Response(image_data, mimetype=content_type)
+
+@app.route("/convert_image", methods=["GET", "POST"])
+def convert_image():
+    # Parameter aus GET oder POST Request holen
+    if request.method == "POST":
+        source_file = request.form.get("source_file")
+        destination_file = request.form.get("destination_file")
+        text = request.form.get("text")
+    else:  # GET
+        source_file = request.args.get("source_file")
+        destination_file = request.args.get("destination_file")
+        text = request.args.get("text")
+    
+    # Überprüfen, ob die Quelldatei existiert
+    if not os.path.exists(source_file) or not os.path.isfile(source_file):
+        return f"<h2>Fehler: Die Quelldatei '{source_file}' wurde nicht gefunden.</h2>", 404
+    
+    # Verzeichnis für die Zieldatei erstellen, falls es nicht existiert
+    destination_dir = os.path.dirname(destination_file)
+    if not os.path.exists(destination_dir):
+        os.makedirs(destination_dir)
+    
+    try:
+        # Debug-Meldungen ausgeben
+        print("\n==== BILDKONVERTIERUNG GESTARTET ====")
+        print(f"Quelldatei: {source_file}")
+        print(f"Zieldatei: {destination_file}")
+        print(f"Text: {text}")
+        
+        # dbv_autoimgcov.py mit den entsprechenden Parametern aufrufen
+        cmd = ["python", "dbv_autoimgcov.py", "auto", 
+               "--source-file", source_file, 
+               "--destination-file", destination_file, 
+               "--text", text]
+        
+        print(f"Ausgeführter Befehl: {' '.join(cmd)}")
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        print(f"Rückgabecode: {result.returncode}")
+        print(f"Ausgabe: {result.stdout}")
+        print(f"Fehler: {result.stderr}")
+        print("==== BILDKONVERTIERUNG BEENDET ====")
+        
+        if result.returncode == 0:
+            # Zurück zur Detailseite mit einer Erfolgsmeldung
+            entry_id = request.referrer.split("/")[-1].split("?")[0] if request.referrer else ""
+            db = request.args.get("db") or DB_PATH
+            
+            # Direkt zur Detailseite zurückkehren
+            return f"""<html>
+                    <head>
+                        <meta http-equiv='refresh' content='0;url=/details/{entry_id}?db={db}'>
+                        <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                    </head>
+                    <body>
+                        <h2>Bild wurde erfolgreich konvertiert!</h2>
+                        <p>Sie werden weitergeleitet...</p>
+                        <p><a href='/details/{entry_id}?db={db}'>Klicken Sie hier, wenn Sie nicht automatisch weitergeleitet werden.</a></p>
+                    </body>
+                </html>"""
+        else:
+            # Fehler anzeigen
+            return f"""<html>
+                    <head>
+                        <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                    </head>
+                    <body>
+                        <h2>Fehler bei der Bildkonvertierung</h2>
+                        <p>Fehlermeldung: {result.stderr}</p>
+                        <p><a href='{request.referrer}'>Zurück zur vorherigen Seite</a></p>
+                    </body>
+                </html>"""
+    except Exception as e:
+        return f"""<html>
+                <head>
+                    <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                </head>
+                <body>
+                    <h2>Fehler bei der Bildkonvertierung</h2>
+                    <p>Fehlermeldung: {str(e)}</p>
+                    <p><a href='{request.referrer}'>Zurück zur vorherigen Seite</a></p>
+                </body>
+            </html>"""
+
+@app.route("/delete_image")
+def delete_image():
+    file_path = request.args.get("file")
+    
+    # Überprüfen, ob die Datei existiert
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        return f"<h2>Fehler: Die Datei '{file_path}' wurde nicht gefunden.</h2>", 404
+    
+    try:
+        # Debug-Meldungen ausgeben
+        print("\n==== BILD LÖSCHEN GESTARTET ====")
+        print(f"Datei: {file_path}")
+        
+        # Datei löschen
+        os.remove(file_path)
+        
+        print(f"Datei wurde gelöscht: {file_path}")
+        print("==== BILD LÖSCHEN BEENDET ====")
+        
+        # Zurück zur Detailseite
+        entry_id = request.referrer.split("/")[-1].split("?")[0] if request.referrer else ""
+        db = request.args.get("db") or DB_PATH
+        
+        # Direkt zur Detailseite zurückkehren
+        return f"""<html>
+                <head>
+                    <meta http-equiv='refresh' content='0;url=/details/{entry_id}?db={db}'>
+                    <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                </head>
+                <body>
+                    <h2>Bild wurde erfolgreich gelöscht!</h2>
+                    <p>Sie werden weitergeleitet...</p>
+                    <p><a href='/details/{entry_id}?db={db}'>Klicken Sie hier, wenn Sie nicht automatisch weitergeleitet werden.</a></p>
+                </body>
+            </html>"""
+    except Exception as e:
+        return f"""<html>
+                <head>
+                    <style>body {{ font-family: sans-serif; text-align: center; margin-top: 50px; }}</style>
+                </head>
+                <body>
+                    <h2>Fehler beim Löschen der Datei</h2>
+                    <p>Fehlermeldung: {str(e)}</p>
+                    <p><a href='{request.referrer}'>Zurück zur vorherigen Seite</a></p>
+                </body>
+            </html>"""
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
