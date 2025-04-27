@@ -15,7 +15,7 @@ shadow_color = (0, 0, 0,168 )     # Schwarz
 default_font_size = 120  # Extremely large font size
 default_font_line_spacing  = 32
 horizontal_text_pos = 50
-vertical_text_pos = 100
+vertical_text_pos = 50
 text_y_offset = 5
 
 
@@ -182,7 +182,7 @@ def process_image(image_path, person_name, shift_right=True):
         # Bild vorbereiten
         if is_vertical: 
             # Calculate the position to paste the image (35% shift - increased from 25%)
-            shift_amount = int((1920 - new_width - text_width - 2*horizontal_text_pos) * 0.25)  # More room for text
+            shift_amount = int((1920 - new_width - text_width) * 0.25)  # More room for text
             
             if shift_right:
                 # Shift image to the right with margin, text will be on the left
@@ -222,7 +222,7 @@ def process_image(image_path, person_name, shift_right=True):
             text_bg_height = int(text_height + padding_vertical*2 - font_size * 0.2) # Height of the background
             text_bg_width = int(text_width + padding_horizontal * 2)    # Width of the background
             text_bg = Image.new('RGBA', (text_bg_width, text_bg_height), (80, 80, 80, 168))  # Darker gray with opacity
-            canvas.paste(text_bg, (text_x - padding_horizontal, text_y + padding_vertical), text_bg)
+            #canvas.paste(text_bg, (text_x - padding_horizontal, text_y + padding_vertical), text_bg)
             
         else: # QUER
             # For horizontal images, place text at the bottom
