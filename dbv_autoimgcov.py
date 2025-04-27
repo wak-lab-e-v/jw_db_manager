@@ -15,7 +15,7 @@ shadow_color = (0, 0, 0,168 )     # Schwarz
 default_font_size = 120  # Extremely large font size
 default_font_line_spacing  = 32
 horizontal_text_pos = 50
-vertical_text_pos = 50
+vertical_text_pos = 20
 text_y_offset = 5
 
 
