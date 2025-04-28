@@ -11,11 +11,13 @@ pip install pandas>=1.3.0
 pip install openpyxl>=3.0.0
 pip install customtkinter
 pip install Flask>=2.0.0
+sudo apt install python3-psd-tools
+sudo apt install python3-piexif
 ```
+
 Optional ein Datenbakbrowser
 ```bash
 sudo apt install sqlitebrowswer
-sudo apt install python3-piexif
 ```
 
 ## Verwendung
