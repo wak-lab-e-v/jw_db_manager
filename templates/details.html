@@ -54,7 +54,7 @@
                 </div>
             </div>
             <div class="details-row-inline" style="display: flex; gap: 20px; align-items: flex-start; margin-top: -10px;">
-                <div style="width: 60%;">
+                <div style="width: 30%;">
                     <div class="details-status-row" style="margin-top: 0;">
                         <span class="details-status-label">Status:</span>
                         <select class="details-status-select" name="status">
@@ -62,6 +62,12 @@
                                 <option value="{{ opt }}" {% if opt == status %}selected{% endif %}>{{ opt }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+                </div>
+                <div style="width: 30%;">
+                    <div class="details-label">Location:</div>
+                    <div class="details-value" style="background: #f5f5f5; padding: 10px 22px; border-radius: 6px;">
+                        {{ location or '-' }}
                     </div>
                 </div>
                 <div style="width: 33%;">
@@ -201,6 +207,7 @@
         </div>
         <hr/>
         <div style="margin-top: 2.7em; margin-bottom: 0.4em; color: #888; font-size: 0.97em;">
+
             <div style="margin-bottom: 8px;">Quell Path: {{ src_path }}</div>
             <div style="margin-bottom: 8px;">Arbeits Path: {{ work_path }}</div>
             <div style="margin-bottom: 8px;">Final Bild 1: {{ final_picture_1 or '-' }}</div>

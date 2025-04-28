@@ -177,7 +177,6 @@ def check_pictures(db_manager, target_path=None, operation=None):
                         feiertag_dir = f"{feiertag.replace('/', '-').replace('\\', '-')}_{location_clean}"
                     else:
                         feiertag_dir = feiertag.replace('/', '-').replace('\\', '-') if feiertag else "Unbekannt"
-                    
                     feieruhrzeit_dir = feieruhrzeit.replace('/', '-').replace('\\', '-') if feieruhrzeit else "Unbekannt"
                     person_dir = f"{vorname}_{name}_{bestellnummer}".replace('/', '-').replace('\\', '-')
                     

@@ -70,6 +70,7 @@
             <th>Name</th>
             <th>Feieruhrzeit</th>
             <th>Feiertag</th>
+            <th>Location</th>
             <th>Hint</th>
             <th>Status</th>
             <th>Created</th>
@@ -85,6 +86,7 @@
             <td style="text-align:left">{{ row['name'] }}</td>
             <td>{{ row['feieruhrzeit'] }}</td>
             <td>{{ row['feiertag'] }}</td>
+            <td>{{ row['location'].split()[-1] if row['location'] else '-' }}</td>
             <td>{{ row['hint'] }}</td>
             <td>{{ row['status'] }}</td>
             <td>{{ row['created_at'] }}</td>

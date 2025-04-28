@@ -162,15 +162,17 @@ def details(entry_id):
     uid = row[4]
     feiertag = row[5]
     feieruhrzeit = row[6]
-    hint = row[7]
-    src_path = row[8]
-    work_path = row[9]
-    final_picture_1 = row[10] if len(row) > 13 else None
-    final_picture_2 = row[11] if len(row) > 13 else None
-    final_picture_3 = row[12] if len(row) > 13 else None
-    status = row[13] if len(row) > 13 else row[10]
-    created_at = row[14] if len(row) > 13 else row[11]
-    updated_at = row[15] if len(row) > 13 else row[12]
+    location = row[7]
+    hint = row[8]
+    src_path = row[9]
+    work_path = row[10]
+    
+    final_picture_1 = row[11]
+    final_picture_2 = row[12]
+    final_picture_3 = row[13]
+    status = row[14]
+    created_at = row[15]
+    updated_at = row[16]
     
     # Wenn POST-Request, Daten aktualisieren
     if request.method == "POST":
@@ -259,6 +261,7 @@ def details(entry_id):
         uid=uid,
         feiertag=feiertag,
         feieruhrzeit=feieruhrzeit,
+        location=location,
         hint=hint,
         src_path=src_path,
         work_path=work_path,
