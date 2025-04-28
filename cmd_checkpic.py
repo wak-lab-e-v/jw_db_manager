@@ -57,7 +57,7 @@ def check_pictures(db_manager, target_path=None, operation=None):
         is_move_operation = operation == 'move'
         
         # Bildendungen
-        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tif', '.tiff', '.jfif']
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tif', '.tiff', '.jfif', '.psd']
         
         # Iteriere über alle Einträge
         for entry_id, name, vorname, src_path, feiertag, feieruhrzeit, bestellnummer, location in entries:

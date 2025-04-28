@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bild Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .checkbox-group {
+            margin-top: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bild Editor</h1>
+        <p>Geben Sie den Pfad zu einem Bild ein, das Sie bearbeiten möchten.</p>
+        
+        <form action="/edit" method="get">
+            <div class="form-group">
+                <label for="path">Bildpfad:</label>
+                <input type="text" id="path" name="path" placeholder="/pfad/zum/bild.jpg" required>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="encoded" name="encoded" value="true">
+                <label for="encoded" style="display: inline;">Pfad ist base64-codiert</label>
+            </div>
+            
+            <button type="submit">Bild bearbeiten</button>
+        </form>
+    </div>
+</body>
+</html>

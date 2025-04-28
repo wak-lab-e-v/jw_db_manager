@@ -15,7 +15,10 @@
     </style>
 </head>
 <body>
-    <h1>Datenbank-Übersicht</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Datenbank-Übersicht</h1>
+        <a href="/dbfunc?db={{ db }}" style="background-color: #4CAF50; color: white; padding: 8px 15px; text-decoration: none; border-radius: 4px; font-weight: bold;">Funktionen</a>
+    </div>
     {% if db_error %}
     <div class="error-message">{{ db_error }}</div>
     {% endif %}

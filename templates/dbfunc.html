@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Funktionen - Datenbank-Viewer Web</title>
+    <style>
+        body { font-family: sans-serif; background: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .card { background: white; border-radius: 5px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .navigation { margin-bottom: 20px; }
+        .navigation a { text-decoration: none; color: #0066cc; }
+        .success-message { background-color: #e8f5e9; }
+        .error-message { background-color: #ffebee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navigation">
+            <a href="/?db={{ db }}">&larr; Zurück zur Übersicht</a>
+        </div>
+        
+        <h1>Funktionen</h1>
+        
+        <div class="card">
+            <h2>Feiertag und Feierzeit auswählen</h2>
+            
+            <form method="post" action="/dbfunc">
+                <input type="hidden" name="db" value="{{ db }}">
+                
+                <div class="form-group">
+                    <label for="feierzeit">Feierzeit:</label>
+                    <select name="feierzeit" id="feierzeit">
+                        <option value="">Bitte auswählen</option>
+                        {% for zeit in feierzeiten %}
+                            <option value="{{ zeit }}">{{ zeit }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="feiertag">Feiertag:</label>
+                    <select name="feiertag" id="feiertag">
+                        <option value="">Bitte auswählen</option>
+                        {% for tag in feiertage %}
+                            <option value="{{ tag }}">{{ tag }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <h3>Aktionen</h3>
+                <div class="actions" style="display: flex; flex-direction: column; gap: 10px;">
+                    <button type="submit" name="action" value="prepare_final_images" style="text-align: left; padding: 12px 15px;">
+                        <strong>Finale Bilder im OUT bereitstellen</strong>
+                    </button>
+                    <!-- Weitere Aktionsbuttons können hier hinzugefügt werden -->
+                </div>
+            </form>
+        </div>
+        
+        {% if message %}
+        <div class="card {% if success %}success-message{% else %}error-message{% endif %}">
+            <p>{{ message }}</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

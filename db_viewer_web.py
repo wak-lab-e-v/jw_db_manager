@@ -589,5 +589,88 @@ def convert_psd():
                 </body>
             </html>"""
 
+@app.route("/dbfunc", methods=["GET", "POST"])
+def dbfunc():
+    """Funktionen-Seite mit Dropdown-Menüs für Feierzeit und Feiertag"""
+    db = request.args.get("db") or DB_PATH
+    
+    # Prüfen, ob die Datenbank existiert
+    conn = get_db_connection(db)
+    if conn is None:
+        return "Database not found", 404
+    
+    # Feierzeiten und Feiertage aus der Datenbank abrufen
+    try:
+        cur = conn.cursor()
+        
+        # Feierzeiten abrufen
+        cur.execute(f"SELECT DISTINCT feieruhrzeit FROM {TABLE} WHERE feieruhrzeit IS NOT NULL AND feieruhrzeit != '' ORDER BY feieruhrzeit")
+        feierzeiten = [row[0] for row in cur.fetchall()]
+        
+        # Feiertage abrufen
+        cur.execute(f"SELECT DISTINCT feiertag FROM {TABLE} WHERE feiertag IS NOT NULL AND feiertag != '' ORDER BY feiertag")
+        feiertage = [row[0] for row in cur.fetchall()]
+        
+        message = None
+        success = False
+        
+        # POST-Anfrage verarbeiten
+        if request.method == "POST":
+            feierzeit = request.form.get("feierzeit", "")
+            feiertag = request.form.get("feiertag", "")
+            action = request.form.get("action", "")
+            
+            if not feierzeit and not feiertag:
+                message = "Bitte wählen Sie mindestens Feierzeit oder Feiertag aus."
+                success = False
+            elif action == "prepare_final_images":
+                # Aktion: Finale Bilder im OUT bereitstellen
+                try:
+                    # Abfrage erstellen basierend auf den ausgewählten Filtern
+                    query = f"SELECT id, work_path FROM {TABLE} WHERE 1=1"
+                    params = []
+                    
+                    if feierzeit:
+                        query += " AND feieruhrzeit = ?"
+                        params.append(feierzeit)
+                    
+                    if feiertag:
+                        query += " AND feiertag = ?"
+                        params.append(feiertag)
+                    
+                    # Daten abrufen
+                    cur.execute(query, params)
+                    entries = cur.fetchall()
+                    
+                    if not entries:
+                        message = "Keine passenden Einträge gefunden."
+                        success = False
+                    else:
+                        # Hier würde die eigentliche Logik zum Bereitstellen der Bilder im OUT-Verzeichnis folgen
+                        # Für jetzt nur eine Nachricht zurückgeben
+                        count = len(entries)
+                        message = f"{count} Einträge gefunden. Finale Bilder würden im OUT-Verzeichnis bereitgestellt werden."
+                        success = True
+                        
+                except Exception as e:
+                    message = f"Fehler bei der Verarbeitung: {str(e)}"
+                    success = False
+            else:
+                message = "Unbekannte Aktion"
+                success = False
+        
+        conn.close()
+        return render_template("dbfunc.html", 
+                              db=db, 
+                              feierzeiten=feierzeiten, 
+                              feiertage=feiertage, 
+                              message=message, 
+                              success=success)
+    
+    except sqlite3.Error as e:
+        if conn:
+            conn.close()
+        return f"Datenbankfehler: {str(e)}", 500
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=4444)
