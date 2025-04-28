@@ -19,11 +19,11 @@ def get_image_info(file_path):
 
 # Konfigurierbare Statusoptionen für alle Status-Dropdowns
 STATUS_OPTIONS = [
-    'neu importiert',
+    'neu',
     'in Bearbeitung',
-    'abgeschlossen',
-    'wartet',
-    'storniert'
+    'Erledigt',
+    'Problem',
+    'Storniert'
 ]
 
 app = Flask(__name__)
