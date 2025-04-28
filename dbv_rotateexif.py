@@ -1,6 +1,7 @@
 import os
 import argparse
 import piexif
+from PIL import Image
 
 def get_current_orientation(exif_dict):
     """Lese die aktuelle Exif-Orientierung."""
@@ -28,11 +29,9 @@ def rotate_exif(image_path, output_path, angle):
 
     # Exif-Daten anpassen (Orientierung)
     if (angle is None) or (angle == 0):
-        # Absoluter Winkel
         new_orientation = current_orientation
     else:
-        # Relative Drehung
-        if current_orientation == 1:  # Keine Drehung 1 6 3 8
+        if current_orientation == 1:  # Keine Drehung
             new_orientation = 6 if angle == 90 else (3 if angle == 180 else 8)
         elif current_orientation == 6:  # 90 Grad
             new_orientation = 3 if angle == 90 else (8 if angle == 180 else 1)
@@ -50,26 +49,44 @@ def rotate_exif(image_path, output_path, angle):
     piexif.insert(exif_bytes, image_path, output_path)
     return 0, f"Exif-Orientierung erfolgreich geändert und Bild gespeichert als '{output_path}'."
 
+def rotate_image(image_path, output_path, angle):
+    # Überprüfen, ob die Bilddatei existiert
+    if not os.path.isfile(image_path):
+        return 1, f"Fehler: Die Datei '{image_path}' wurde nicht gefunden."
+
+    # Bild öffnen
+    try:
+        with Image.open(image_path) as img:
+            # Bild drehen
+            rotated_img = img.rotate(angle, expand=True)
+            # Bild speichern
+            rotated_img.save(output_path)
+            return 0, f"Bild erfolgreich gedreht und gespeichert als '{output_path}'."
+    except Exception as e:
+        return 1, f"Fehler beim Verarbeiten des Bildes: {e}"
+
 def main():
     # Argumente parsen
-    parser = argparse.ArgumentParser(description='Ändere die Exif-Orientierung eines JPG-Bildes.')
-    parser.add_argument('image_file', type=str, help='Der Pfad zur JPG-Datei.')
-    parser.add_argument('output_image', type=str, help='Der Pfad zur Ausgabedatei (JPG).')
+    parser = argparse.ArgumentParser(description='Drehe ein Bild und speichere es oder ändere die Exif-Orientierung eines JPG-Bildes.')
+    parser.add_argument('image_file', type=str, help='Der Pfad zur Bilddatei.')
+    parser.add_argument('output_image', type=str, help='Der Pfad zur Ausgabedatei.')
     parser.add_argument('angle', type=int, choices=[0, 90, 180, 270], help='Der Drehwinkel (0, 90, 180, 270 Grad).')
 
     args = parser.parse_args()
 
-    # Bestimme den Drehwinkel
-    if args.angle is not None:
-        angle = args.angle
-    else:
-        return 1, "Fehler: Entweder ein absoluter oder relativer Winkel muss angegeben werden."
+    # Bestimme den Dateityp
+    file_extension = os.path.splitext(args.image_file)[1].lower()
 
-    # Exif-Orientierung ändern
-    status, message = rotate_exif(args.image_file, args.output_image, angle)
+    # Exif-Drehung für JPG und TIFF, sonst mit Pillow drehen
+    if file_extension in ['.jpg', '.jpeg', '.tiff', '.tif']:
+        status, message = rotate_exif(args.image_file, args.output_image, args.angle)
+    else:
+        status, message = rotate_image(args.image_file, args.output_image, args.angle)
+
     print(message)
     exit(status)
 
 if __name__ == '__main__':
     #rotate_exif("../source/h.jpg", "../source/hr.jpg", 90)
     main()
+

@@ -13,6 +13,8 @@ darker_gray = (80, 80, 80, 168)  # Darker gray with higher opacity
 shadow_color = (0, 0, 0,168 )     # Schwarz
 
 default_font_size = 120  # Extremely large font size
+smal_font_size    = 100
+ultra_smal_font_size = 82
 default_font_line_spacing  = 32
 horizontal_text_pos = 50
 vertical_text_pos = 20
@@ -136,8 +138,8 @@ def process_image(image_path, person_name, shift_right=True):
             width, height = img.size  # Update dimensions after rotation    
         
         # Determine if the image is vertical or horizontal
-        is_vertical = height > width
-        
+        is_vertical = (height / width)  > 1.05
+         
         # Create a black canvas with Full HD resolution (1920x1080)
         canvas = Image.new('RGB', (1920, 1080), (0, 0, 0))
         
@@ -150,9 +152,8 @@ def process_image(image_path, person_name, shift_right=True):
         # Text Vorbereiten
         # Add text with semi-transparent background
         draw = ImageDraw.Draw(canvas)
-        font = load_font(default_font_size)
-        font_size = font.size
         
+            
         
         if is_vertical:
             # Wrap the name by inserting newlines at spaces
@@ -173,11 +174,38 @@ def process_image(image_path, person_name, shift_right=True):
             
             # Use the wrapped name instead of the original
             person_name = wrapped_name
+            
+            # Calculate Font
+            font = load_font(default_font_size)
+            font_size = font.size
+            text_width, text_height = calcTextSize(font, person_name, default_font_line_spacing)
+            
+            if text_width > 800:
+                font = load_font(smal_font_size)
+                font_size = font.size
+            text_width, text_height = calcTextSize(font, person_name, default_font_line_spacing)
+            
+            if text_width > 800:
+                font = load_font(ultra_smal_font_size)
+                font_size = font.size
             text_width, text_height = calcTextSize(font, wrapped_name, default_font_line_spacing)
         else:
+            # Calculate Font
+            font = load_font(default_font_size)
+            font_size = font.size
+            text_width, text_height = calcTextSize(font, person_name, default_font_line_spacing)
+            
+            if text_width > 1900:
+                font = load_font(smal_font_size)
+                font_size = font.size
+            text_width, text_height = calcTextSize(font, person_name, default_font_line_spacing)
+            
+            if text_width > 1900:
+                font = load_font(ultra_smal_font_size)
+                font_size = font.size  
+            
             # Calculate text size (compatible with newer Pillow versions)
             text_width, text_height = calcTextSize(font, person_name, default_font_line_spacing)
-        
         
         # Bild vorbereiten
         if is_vertical: 
@@ -300,10 +328,8 @@ if __name__ == "__main__":
     
     if not args.command:
         print("Error: No command specified. Use 'python dbv_autoimgcov.py -h' for help.")
-        
-        
-        print(execute_autoconvert('../source/h.jpg', '../source/h1.jpg', "Tobi Dietzel"))
-        print(execute_autoconvert('../source/q.jpg', '../source/q1.jpg', "Tobi Dietzel"))
+        #print(execute_autoconvert('../source/h.jpg', '../source/h1.jpg', "Tobi Dietzel"))
+        #print(execute_autoconvert('../source/q.jpg', '../source/q1.jpg', "Tobi Dietzel"))
         
         sys.exit(1)
         
