@@ -138,8 +138,8 @@ def process_image(image_path, person_name, shift_right=True):
             width, height = img.size  # Update dimensions after rotation    
         
         # Determine if the image is vertical or horizontal
-        is_vertical = height > (width + 20)
-        
+        is_vertical = (height / width)  > 1.05
+         
         # Create a black canvas with Full HD resolution (1920x1080)
         canvas = Image.new('RGB', (1920, 1080), (0, 0, 0))
         
