@@ -611,6 +611,10 @@ def dbfunc():
         cur.execute(f"SELECT DISTINCT feiertag FROM {TABLE} WHERE feiertag IS NOT NULL AND feiertag != '' ORDER BY feiertag")
         feiertage = [row[0] for row in cur.fetchall()]
         
+        # Locations abrufen
+        cur.execute(f"SELECT DISTINCT location FROM {TABLE} WHERE location IS NOT NULL AND location != '' ORDER BY location")
+        locations = [row[0] for row in cur.fetchall()]
+        
         message = None
         success = False
         
@@ -620,14 +624,16 @@ def dbfunc():
             feiertag = request.form.get("feiertag", "")
             action = request.form.get("action", "")
             
-            if not feierzeit and not feiertag:
-                message = "Bitte wählen Sie mindestens Feierzeit oder Feiertag aus."
+            location = request.form.get("location", "")
+            
+            if not feierzeit and not feiertag and not location:
+                message = "Bitte wählen Sie mindestens einen Filter aus (Feierzeit, Feiertag oder Location)."
                 success = False
             elif action == "prepare_final_images":
                 # Aktion: Finale Bilder im OUT bereitstellen
                 try:
-                    # Abfrage erstellen basierend auf den ausgewählten Filtern
-                    query = f"SELECT id, work_path FROM {TABLE} WHERE 1=1"
+                    # Abfrage erstellen basierend auf den ausgewählten Filtern + Status = "Erledigt"
+                    query = f"SELECT id, vorname, name, bestellnummer, work_path, final_picture_1, final_picture_2, final_picture_3 FROM {TABLE} WHERE status = 'Erledigt'"
                     params = []
                     
                     if feierzeit:
@@ -638,6 +644,10 @@ def dbfunc():
                         query += " AND feiertag = ?"
                         params.append(feiertag)
                     
+                    if location:
+                        query += " AND location = ?"
+                        params.append(location)
+                    
                     # Daten abrufen
                     cur.execute(query, params)
                     entries = cur.fetchall()
@@ -646,11 +656,76 @@ def dbfunc():
                         message = "Keine passenden Einträge gefunden."
                         success = False
                     else:
-                        # Hier würde die eigentliche Logik zum Bereitstellen der Bilder im OUT-Verzeichnis folgen
-                        # Für jetzt nur eine Nachricht zurückgeben
-                        count = len(entries)
-                        message = f"{count} Einträge gefunden. Finale Bilder würden im OUT-Verzeichnis bereitgestellt werden."
-                        success = True
+                        # Erstelle einen Ordnernamen basierend auf den ausgewählten Filtern
+                        folder_components = []
+                        if location:
+                            folder_components.append(location)
+                        if feiertag:
+                            folder_components.append(feiertag)
+                        if feierzeit:
+                            folder_components.append(feierzeit)
+                            
+                        # Erstelle einen sicheren Ordnernamen (ersetze problematische Zeichen)
+                        folder_name = "_".join(folder_components)
+                        folder_name = folder_name.replace("/", "-").replace("\\", "-").replace(":", "-")
+                        
+                        # Definiere den Pfad zum OUT-Verzeichnis
+                        out_dir = "/diashow/out"
+                        target_dir = os.path.join(out_dir, folder_name)
+                        
+                        try:
+                            # Erstelle das Verzeichnis, falls es nicht existiert
+                            os.makedirs(target_dir, exist_ok=True)
+                            
+                            # Zähler für kopierte Bilder
+                            copied_count = 0
+                            skipped_count = 0
+                            
+                            # Iteriere über alle gefundenen Einträge
+                            for entry in entries:
+                                entry_id, vorname, name, bestellnummer, work_path, final_picture_1, final_picture_2, final_picture_3 = entry
+                                
+                                # Erstelle einen sicheren Basisnamen für die Bilder
+                                safe_vorname = vorname.replace(" ", "_").replace("/", "-").replace("\\", "-").replace(":", "-")
+                                safe_name = name.replace(" ", "_").replace("/", "-").replace("\\", "-").replace(":", "-")
+                                safe_bestellnummer = str(bestellnummer).replace(" ", "_").replace("/", "-").replace("\\", "-").replace(":", "-")
+                                base_filename = f"{safe_vorname}_{safe_name}_{safe_bestellnummer}"
+                                
+                                # Prüfe jedes der final_picture-Felder
+                                final_pics = [final_picture_1, final_picture_2, final_picture_3]
+                                
+                                # Mindestens ein Feld muss Daten enthalten
+                                has_valid_pic = False
+                                
+                                for i, pic_path in enumerate(final_pics, 1):
+                                    if pic_path and os.path.exists(pic_path):
+                                        has_valid_pic = True
+                                        
+                                        # Bestimme die Dateiendung
+                                        _, ext = os.path.splitext(pic_path)
+                                        
+                                        # Erstelle den neuen Dateinamen
+                                        new_filename = f"{base_filename}_row{i}{ext}"
+                                        target_path = os.path.join(target_dir, new_filename)
+                                        
+                                        # Kopiere die Datei
+                                        try:
+                                            import shutil
+                                            shutil.copy2(pic_path, target_path)
+                                            copied_count += 1
+                                        except Exception as copy_err:
+                                            print(f"Fehler beim Kopieren von {pic_path}: {str(copy_err)}")
+                                            skipped_count += 1
+                                
+                                if not has_valid_pic:
+                                    skipped_count += 1
+                            
+                            # Erstelle eine Erfolgsmeldung
+                            message = f"{len(entries)} Einträge gefunden. {copied_count} Bilder nach {target_dir} kopiert. {skipped_count} Einträge übersprungen."
+                            success = True
+                        except Exception as e:
+                            message = f"Fehler bei der Verarbeitung: {str(e)}"
+                            success = False
                         
                 except Exception as e:
                     message = f"Fehler bei der Verarbeitung: {str(e)}"
@@ -664,6 +739,7 @@ def dbfunc():
                               db=db, 
                               feierzeiten=feierzeiten, 
                               feiertage=feiertage, 
+                              locations=locations,
                               message=message, 
                               success=success)
     
