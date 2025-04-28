@@ -10,9 +10,25 @@ def psd_to_png(psd_file, output_image):
     try:
         # PSD-Datei öffnen
         psd = PSDImage.open(psd_file)
+        print(output_image)        
+
+        
+        # Kompositieren der Ebenen
+        composite_image = psd.composite()
+
+        # In RGB konvertieren, falls es im CMYK-Modus ist
+        if composite_image.mode == 'CMYK':
+            composite_image = composite_image.convert('RGB')
 
         # PSD in PNG umwandeln und speichern
-        psd.save(output_image)
+        composite_image.save(output_image)
+
+        #for layer in psd:
+        #    print(layer)
+        #    layer_image = layer.composite()
+        #    layer_image.save('%s.png' % layer.name)
+    
+        # psd.save(output_image)
         return 0, f"Bild erfolgreich gespeichert als '{output_image}'."
     except Exception as e:
         return 1, f"Fehler beim Verarbeiten der Datei: {str(e)}"
