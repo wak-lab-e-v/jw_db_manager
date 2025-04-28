@@ -13,6 +13,7 @@ pip install customtkinter
 pip install Flask>=2.0.0
 sudo apt install python3-psd-tools
 sudo apt install python3-piexif
+sudo apt-get install python3-opencv
 ```
 
 Optional ein Datenbakbrowser

@@ -1,7 +1,7 @@
 import os
 import argparse
 import piexif
-from PIL import Image
+from PIL import Image 
 
 def get_current_orientation(exif_dict):
     """Lese die aktuelle Exif-Orientierung."""
@@ -56,13 +56,36 @@ def rotate_image(image_path, output_path, angle):
 
     # Bild öffnen
     try:
-        with Image.open(image_path) as img:
+        if os.path.exists(image_path):
+            # Bild öffnen
+            img = Image.open(image_path)
+
             # Bild drehen
             rotated_img = img.rotate(angle, expand=True)
             # Bild speichern
             rotated_img.save(output_path)
             return 0, f"Bild erfolgreich gedreht und gespeichert als '{output_path}'."
+        else:
+            return 1, f"Die Datei existiert nicht. '{image_path}'"
+     
     except Exception as e:
+        import cv2
+
+        # Bild laden
+        bild = cv2.imread(image_path)
+
+        # Überprüfen, ob das Bild erfolgreich geladen wurde
+        if bild is None:
+            return 1, "Das Bild konnte nicht geladen werden. Es könnte beschädigt sein oder im falschen Format vorliegen."
+        else:
+            # Bild rotieren (z.B. um 90 Grad im Uhrzeigersinn)
+            bild_rotated = cv2.rotate(bild, cv2.ROTATE_90_CLOCKWISE)
+
+            # Rotiertes Bild speichern
+            cv2.imwrite(output_path, bild_rotated)
+            return 0, "Das Bild wurde erfolgreich rotiert und gespeichert."
+            
+    
         return 1, f"Fehler beim Verarbeiten des Bildes: {e}"
 
 def main():
@@ -87,6 +110,6 @@ def main():
     exit(status)
 
 if __name__ == '__main__':
-    #rotate_exif("../source/h.jpg", "../source/hr.jpg", 90)
+    #print(rotate_image("../Luna-Summer-_Kuehn-_1_nachgefordert.png", "../temp.png", 90))
     main()
 
