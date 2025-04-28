@@ -245,7 +245,7 @@ def details(entry_id):
                 })
                 
                 # Bilder für die Galerie sammeln
-                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
+                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.psd')):
                     image_files.append(f)
     
     # Status-Optionen importieren
