@@ -49,6 +49,22 @@ def rotate_exif(image_path, output_path, angle):
     piexif.insert(exif_bytes, image_path, output_path)
     return 0, f"Exif-Orientierung erfolgreich geändert und Bild gespeichert als '{output_path}'."
 
+def rotate_image(image_path, output_path, angle):
+    # Überprüfen, ob die Bilddatei existiert
+    if not os.path.isfile(image_path):
+        return 1, f"Fehler: Die Datei '{image_path}' wurde nicht gefunden."
+
+    # Bild öffnen
+    try:
+        with Image.open(image_path) as img:
+            # Bild drehen
+            rotated_img = img.rotate(angle, expand=True)
+            # Bild speichern
+            rotated_img.save(output_path)
+            return 0, f"Bild erfolgreich gedreht und gespeichert als '{output_path}'."
+    except Exception as e:
+        return 1, f"Fehler beim Verarbeiten des Bildes: {e}"
+
 def main():
     # Argumente parsen
     parser = argparse.ArgumentParser(description='Drehe ein Bild und speichere es oder ändere die Exif-Orientierung eines JPG-Bildes.')
