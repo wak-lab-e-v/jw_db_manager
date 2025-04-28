@@ -72,7 +72,7 @@ python3 db_viewer_web.py
 
 #### Browser
 
-http://localhost:5000
+http://localhost:4444
 
 
 ## Mitwirkende
