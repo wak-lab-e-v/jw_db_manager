@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, Response
 import sqlite3
 import os
 import subprocess
+import datetime
 from PIL import Image
 import piexif
 
@@ -681,6 +682,16 @@ def dbfunc():
                             copied_count = 0
                             skipped_count = 0
                             
+                            # Log-Datei für alle Datensätze erstellen
+                            log_filename = os.path.join(target_dir, f"db_records_{folder_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+                            with open(log_filename, 'w', encoding='utf-8') as log_file:
+                                log_file.write(f"Datenbankabfrage vom {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                                log_file.write(f"Filter: {', '.join(filter(None, [location, feiertag, feierzeit]))}\n\n")
+                                log_file.write("ID | Vorname | Name | Bestellnummer | Work Path | Final Picture 1 | Final Picture 2 | Final Picture 3\n")
+                                log_file.write("-" * 120 + "\n")
+                                for entry in entries:
+                                    log_file.write(" | ".join(str(item) for item in entry) + "\n")
+                            
                             # Iteriere über alle gefundenen Einträge
                             for entry in entries:
                                 entry_id, vorname, name, bestellnummer, work_path, final_picture_1, final_picture_2, final_picture_3 = entry
@@ -713,6 +724,11 @@ def dbfunc():
                                             import shutil
                                             shutil.copy2(pic_path, target_path)
                                             copied_count += 1
+                                            
+                                            # Log für jede kopierte Datei
+                                            copy_log_path = os.path.join(target_dir, f"copied_files_{folder_name}.log")
+                                            with open(copy_log_path, 'a', encoding='utf-8') as copy_log:
+                                                copy_log.write(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Kopiert: {pic_path} -> {target_path}\n")
                                         except Exception as copy_err:
                                             print(f"Fehler beim Kopieren von {pic_path}: {str(copy_err)}")
                                             skipped_count += 1
