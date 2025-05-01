@@ -2,3 +2,4 @@ Anmeldung_Export.xlsx
 venv/*
 __pycache*
 anmeldungen.db
+uv.lock
