@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLite DB Editor</title>
+    <style>
+        body { font-family: sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { width: calc(100% - 40px); margin: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 30px; box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .title { font-size: 1.8em; font-weight: 700; color: #333; }
+        .subtitle { font-size: 1.2em; color: #666; margin-bottom: 20px; }
+        .table-list { list-style-type: none; padding: 0; }
+        .table-item { padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .table-item:hover { background-color: #f5f5f5; }
+        .table-name { font-size: 1.1em; color: #333; }
+        .table-actions { display: flex; gap: 10px; }
+        .btn { padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; }
+        .btn-primary { background-color: #1976d2; color: white; border: none; }
+        .btn-secondary { background-color: #6c757d; color: white; border: none; }
+        .btn-success { background-color: #28a745; color: white; border: none; }
+        .btn-danger { background-color: #dc3545; color: white; border: none; }
+        .btn:hover { opacity: 0.9; }
+        .error-message { color: #dc3545; padding: 15px; background-color: #f8d7da; border-radius: 4px; margin-bottom: 20px; }
+        .db-info { font-size: 0.9em; color: #666; margin-bottom: 20px; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #888; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">SQLite Datenbank Editor</div>
+            <a href="/query?db={{ db }}" class="btn btn-primary">SQL Abfrage</a>
+        </div>
+        
+        <div class="db-info">
+            Datenbank: <strong>{{ db }}</strong>
+        </div>
+        
+        {% if db_error %}
+        <div class="error-message">
+            {{ db_error }}
+        </div>
+        {% endif %}
+        
+        <div class="subtitle">Tabellen</div>
+        
+        {% if tables %}
+        <ul class="table-list">
+            {% for table in tables %}
+            <li class="table-item">
+                <span class="table-name">{{ table }}</span>
+                <div class="table-actions">
+                    <a href="/table/{{ table }}?db={{ db }}" class="btn btn-primary">Anzeigen</a>
+                    <a href="/structure/{{ table }}?db={{ db }}" class="btn btn-secondary">Struktur</a>
+                    <a href="/new/{{ table }}?db={{ db }}" class="btn btn-success">Neu</a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>Keine Tabellen gefunden.</p>
+        {% endif %}
+        
+        <div style="margin-top: 30px;">
+            <a href="/create_table?db={{ db }}" class="btn btn-success">Neue Tabelle erstellen</a>
+        </div>
+        
+        <div class="footer">
+            SQLite Datenbank Editor | Port 3333
+        </div>
+    </div>
+</body>
+</html>

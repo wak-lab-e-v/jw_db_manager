@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neue Tabelle erstellen - SQLite DB Editor</title>
+    <style>
+        body { font-family: sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { width: calc(100% - 40px); margin: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 30px; box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .title { font-size: 1.8em; font-weight: 700; color: #333; }
+        .subtitle { font-size: 1.2em; color: #666; margin-bottom: 20px; }
+        .btn { padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; }
+        .btn-primary { background-color: #1976d2; color: white; border: none; }
+        .btn-secondary { background-color: #6c757d; color: white; border: none; }
+        .btn-success { background-color: #28a745; color: white; border: none; }
+        .btn-danger { background-color: #dc3545; color: white; border: none; }
+        .btn:hover { opacity: 0.9; }
+        .error-message { color: #dc3545; padding: 15px; background-color: #f8d7da; border-radius: 4px; margin-bottom: 20px; }
+        .success-message { color: #28a745; padding: 15px; background-color: #d4edda; border-radius: 4px; margin-bottom: 20px; }
+        .db-info { font-size: 0.9em; color: #666; margin-bottom: 20px; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #888; font-size: 0.9em; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .form-hint { font-size: 0.8em; color: #666; margin-top: 5px; }
+        
+        .columns-container { margin-top: 20px; }
+        .column-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .column-field { flex: 1; }
+        .column-checkbox { width: auto; }
+        .column-actions { width: 40px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">Neue Tabelle erstellen</div>
+            <a href="/?db={{ db }}" class="btn btn-secondary">Zurück zur Übersicht</a>
+        </div>
+        
+        <div class="db-info">
+            Datenbank: <strong>{{ db }}</strong>
+        </div>
+        
+        <div id="error-container" class="error-message" style="display: none;"></div>
+        <div id="success-container" class="success-message" style="display: none;"></div>
+        
+        <form id="create-table-form">
+            <div class="form-group">
+                <label for="table_name" class="form-label">Tabellenname</label>
+                <input type="text" id="table_name" name="table_name" class="form-control" required>
+            </div>
+            
+            <div class="subtitle">Spalten</div>
+            
+            <div id="columns-container" class="columns-container">
+                <!-- Spaltenzeilen werden hier dynamisch hinzugefügt -->
+                <div class="column-row" data-index="0">
+                    <div class="column-field">
+                        <input type="text" class="form-control" placeholder="Spaltenname" data-field="name" required>
+                    </div>
+                    <div class="column-field">
+                        <select class="form-control" data-field="type">
+                            <option value="TEXT">TEXT</option>
+                            <option value="INTEGER">INTEGER</option>
+                            <option value="REAL">REAL</option>
+                            <option value="BLOB">BLOB</option>
+                            <option value="NUMERIC">NUMERIC</option>
+                            <option value="BOOLEAN">BOOLEAN</option>
+                            <option value="DATE">DATE</option>
+                            <option value="DATETIME">DATETIME</option>
+                            <option value="TIMESTAMP">TIMESTAMP</option>
+                        </select>
+                    </div>
+                    <div class="column-field" style="flex: 0.5;">
+                        <label>
+                            <input type="checkbox" class="column-checkbox" data-field="primary_key">
+                            Primärschlüssel
+                        </label>
+                    </div>
+                    <div class="column-field" style="flex: 0.5;">
+                        <label>
+                            <input type="checkbox" class="column-checkbox" data-field="not_null">
+                            NOT NULL
+                        </label>
+                    </div>
+                    <div class="column-field" style="flex: 0.5;">
+                        <label>
+                            <input type="checkbox" class="column-checkbox" data-field="autoincrement">
+                            Autoincrement
+                        </label>
+                    </div>
+                    <div class="column-field">
+                        <input type="text" class="form-control" placeholder="Standardwert" data-field="default">
+                    </div>
+                    <div class="column-actions">
+                        <button type="button" class="btn btn-danger" onclick="removeColumn(this)" style="padding: 5px 10px;">×</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <button type="button" class="btn btn-secondary" onclick="addColumn()">Spalte hinzufügen</button>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <button type="button" class="btn btn-success" onclick="submitForm()">Tabelle erstellen</button>
+                <button type="reset" class="btn btn-secondary">Zurücksetzen</button>
+            </div>
+        </form>
+        
+        <div class="footer">
+            SQLite Datenbank Editor | Port 3333
+        </div>
+    </div>
+    
+    <script>
+        let columnIndex = 1;
+        
+        function addColumn() {
+            const container = document.getElementById('columns-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'column-row';
+            newRow.dataset.index = columnIndex++;
+            
+            newRow.innerHTML = `
+                <div class="column-field">
+                    <input type="text" class="form-control" placeholder="Spaltenname" data-field="name" required>
+                </div>
+                <div class="column-field">
+                    <select class="form-control" data-field="type">
+                        <option value="TEXT">TEXT</option>
+                        <option value="INTEGER">INTEGER</option>
+                        <option value="REAL">REAL</option>
+                        <option value="BLOB">BLOB</option>
+                        <option value="NUMERIC">NUMERIC</option>
+                        <option value="BOOLEAN">BOOLEAN</option>
+                        <option value="DATE">DATE</option>
+                        <option value="DATETIME">DATETIME</option>
+                        <option value="TIMESTAMP">TIMESTAMP</option>
+                    </select>
+                </div>
+                <div class="column-field" style="flex: 0.5;">
+                    <label>
+                        <input type="checkbox" class="column-checkbox" data-field="primary_key">
+                        Primärschlüssel
+                    </label>
+                </div>
+                <div class="column-field" style="flex: 0.5;">
+                    <label>
+                        <input type="checkbox" class="column-checkbox" data-field="not_null">
+                        NOT NULL
+                    </label>
+                </div>
+                <div class="column-field" style="flex: 0.5;">
+                    <label>
+                        <input type="checkbox" class="column-checkbox" data-field="autoincrement">
+                        Autoincrement
+                    </label>
+                </div>
+                <div class="column-field">
+                    <input type="text" class="form-control" placeholder="Standardwert" data-field="default">
+                </div>
+                <div class="column-actions">
+                    <button type="button" class="btn btn-danger" onclick="removeColumn(this)" style="padding: 5px 10px;">×</button>
+                </div>
+            `;
+            
+            container.appendChild(newRow);
+        }
+        
+        function removeColumn(button) {
+            const row = button.closest('.column-row');
+            
+            // Mindestens eine Spalte beibehalten
+            const container = document.getElementById('columns-container');
+            if (container.children.length > 1) {
+                row.remove();
+            } else {
+                showError('Mindestens eine Spalte ist erforderlich');
+            }
+        }
+        
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+            
+            // Nach 5 Sekunden ausblenden
+            setTimeout(() => {
+                errorContainer.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showSuccess(message) {
+            const successContainer = document.getElementById('success-container');
+            successContainer.textContent = message;
+            successContainer.style.display = 'block';
+            
+            // Nach 5 Sekunden ausblenden
+            setTimeout(() => {
+                successContainer.style.display = 'none';
+            }, 5000);
+        }
+        
+        function submitForm() {
+            const tableName = document.getElementById('table_name').value;
+            
+            if (!tableName) {
+                showError('Bitte geben Sie einen Tabellennamen ein');
+                return;
+            }
+            
+            // Spalten sammeln
+            const columns = [];
+            const columnRows = document.querySelectorAll('.column-row');
+            
+            for (const row of columnRows) {
+                const column = {};
+                
+                // Name und Typ sind erforderlich
+                const nameInput = row.querySelector('[data-field="name"]');
+                const typeSelect = row.querySelector('[data-field="type"]');
+                
+                if (!nameInput.value) {
+                    showError('Alle Spaltennamen müssen ausgefüllt sein');
+                    return;
+                }
+                
+                column.name = nameInput.value;
+                column.type = typeSelect.value;
+                
+                // Checkboxen
+                column.primary_key = row.querySelector('[data-field="primary_key"]').checked;
+                column.not_null = row.querySelector('[data-field="not_null"]').checked;
+                column.autoincrement = row.querySelector('[data-field="autoincrement"]').checked;
+                
+                // Standardwert (optional)
+                const defaultInput = row.querySelector('[data-field="default"]');
+                if (defaultInput.value) {
+                    column.default = defaultInput.value;
+                }
+                
+                columns.push(column);
+            }
+            
+            // Prüfen, ob mehrere Primärschlüssel definiert wurden
+            const primaryKeyCount = columns.filter(col => col.primary_key).length;
+            if (primaryKeyCount > 1) {
+                showError('Es kann nur ein Primärschlüssel definiert werden');
+                return;
+            }
+            
+            // Daten an den Server senden
+            fetch('/create_table?db={{ db }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'table_name': tableName,
+                    'columns': JSON.stringify(columns)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('Tabelle erfolgreich erstellt');
+                    setTimeout(() => {
+                        window.location.href = '/?db={{ db }}';
+                    }, 1500);
+                } else {
+                    showError('Fehler beim Erstellen der Tabelle: ' + data.error);
+                }
+            })
+            .catch(error => {
+                showError('Fehler beim Senden der Anfrage: ' + error);
+            });
+        }
+    </script>
+</body>
+</html>

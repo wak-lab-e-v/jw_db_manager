@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eintrag bearbeiten - SQLite DB Editor</title>
+    <style>
+        body { font-family: sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { width: calc(100% - 40px); margin: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 30px; box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .title { font-size: 1.8em; font-weight: 700; color: #333; }
+        .subtitle { font-size: 1.2em; color: #666; margin-bottom: 20px; }
+        .btn { padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; }
+        .btn-primary { background-color: #1976d2; color: white; border: none; }
+        .btn-secondary { background-color: #6c757d; color: white; border: none; }
+        .btn-success { background-color: #28a745; color: white; border: none; }
+        .btn-danger { background-color: #dc3545; color: white; border: none; }
+        .btn:hover { opacity: 0.9; }
+        .error-message { color: #dc3545; padding: 15px; background-color: #f8d7da; border-radius: 4px; margin-bottom: 20px; }
+        .success-message { color: #28a745; padding: 15px; background-color: #d4edda; border-radius: 4px; margin-bottom: 20px; }
+        .db-info { font-size: 0.9em; color: #666; margin-bottom: 20px; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #888; font-size: 0.9em; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        textarea.form-control { min-height: 100px; }
+        .form-hint { font-size: 0.8em; color: #666; margin-top: 5px; }
+        .form-row { display: flex; gap: 20px; }
+        .form-col { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">Eintrag bearbeiten</div>
+            <a href="/table/{{ table_name }}?db={{ db }}" class="btn btn-secondary">Zurück zur Tabelle</a>
+        </div>
+        
+        <div class="db-info">
+            Datenbank: <strong>{{ db }}</strong> | 
+            Tabelle: <strong>{{ table_name }}</strong>
+        </div>
+        
+        {% if db_error %}
+        <div class="error-message">
+            {{ db_error }}
+        </div>
+        {% endif %}
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ category }}-message">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="post">
+            {% for column in columns %}
+                <div class="form-group">
+                    <label for="{{ column }}" class="form-label">{{ column }}</label>
+                    
+                    {% if column == primary_key %}
+                        <input type="text" id="{{ column }}" name="{{ column }}" class="form-control" value="{{ row[column] }}" readonly>
+                        <div class="form-hint">Primärschlüssel (nicht editierbar)</div>
+                    {% elif column_types[column] and 'TEXT' in column_types[column].upper() and row[column] and row[column]|length > 100 %}
+                        <textarea id="{{ column }}" name="{{ column }}" class="form-control">{{ row[column] }}</textarea>
+                    {% else %}
+                        <input type="text" id="{{ column }}" name="{{ column }}" class="form-control" value="{{ row[column] }}">
+                        
+                        {% if column == 'created_at' or column == 'updated_at' %}
+                            <div class="form-hint">Format: YYYY-MM-DD HH:MM:SS</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            
+            <div style="margin-top: 30px;">
+                <button type="submit" class="btn btn-success">Speichern</button>
+                <a href="/table/{{ table_name }}?db={{ db }}" class="btn btn-secondary">Abbrechen</a>
+            </div>
+        </form>
+        
+        <div class="footer">
+            SQLite Datenbank Editor | Port 3333
+        </div>
+    </div>
+</body>
+</html>

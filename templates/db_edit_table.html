@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ table_name }} - SQLite DB Editor</title>
+    <style>
+        body { font-family: sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { width: calc(100% - 40px); margin: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 30px; box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .title { font-size: 1.8em; font-weight: 700; color: #333; }
+        .subtitle { font-size: 1.2em; color: #666; margin-bottom: 20px; }
+        .btn { padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; }
+        .btn-primary { background-color: #1976d2; color: white; border: none; }
+        .btn-secondary { background-color: #6c757d; color: white; border: none; }
+        .btn-success { background-color: #28a745; color: white; border: none; }
+        .btn-danger { background-color: #dc3545; color: white; border: none; }
+        .btn:hover { opacity: 0.9; }
+        .error-message { color: #dc3545; padding: 15px; background-color: #f8d7da; border-radius: 4px; margin-bottom: 20px; }
+        .db-info { font-size: 0.9em; color: #666; margin-bottom: 20px; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #888; font-size: 0.9em; }
+        
+        .search-bar { margin-bottom: 20px; display: flex; gap: 10px; }
+        .search-input { flex: 1; padding: 8px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; }
+        
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background-color: #f5f5f5; text-align: left; padding: 12px; border-bottom: 2px solid #ddd; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        tr:hover { background-color: #f9f9f9; }
+        
+        .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 20px; }
+        .page-item { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; }
+        .page-item.active { background-color: #1976d2; color: white; border-color: #1976d2; }
+        .page-item:hover:not(.active) { background-color: #f5f5f5; }
+        
+        .actions-cell { white-space: nowrap; }
+        .truncate { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">Tabelle: {{ table_name }}</div>
+            <div>
+                <a href="/?db={{ db }}" class="btn btn-secondary">Zurück</a>
+                <a href="/new/{{ table_name }}?db={{ db }}" class="btn btn-success">Neuer Eintrag</a>
+                <a href="/structure/{{ table_name }}?db={{ db }}" class="btn btn-primary">Struktur</a>
+            </div>
+        </div>
+        
+        <div class="db-info">
+            Datenbank: <strong>{{ db }}</strong> | 
+            Einträge: <strong>{{ total_rows }}</strong>
+        </div>
+        
+        {% if db_error %}
+        <div class="error-message">
+            {{ db_error }}
+        </div>
+        {% endif %}
+        
+        <form class="search-bar" method="get" action="/table/{{ table_name }}">
+            <input type="hidden" name="db" value="{{ db }}">
+            <input type="text" name="search" value="{{ search }}" placeholder="Suchen..." class="search-input">
+            <button type="submit" class="btn btn-primary">Suchen</button>
+            {% if search %}
+            <a href="/table/{{ table_name }}?db={{ db }}" class="btn btn-secondary">Zurücksetzen</a>
+            {% endif %}
+        </form>
+        
+        {% if rows %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        {% for column in columns %}
+                        <th>{{ column }}</th>
+                        {% endfor %}
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        {% for column in columns %}
+                        <td class="truncate" title="{{ row[column] }}">{{ row[column] or '' }}</td>
+                        {% endfor %}
+                        <td class="actions-cell">
+                            <a href="/edit/{{ table_name }}/{{ row[primary_key] }}?db={{ db }}" class="btn btn-primary">Bearbeiten</a>
+                            <button type="button" class="btn btn-danger" onclick="deleteRow('{{ table_name }}', '{{ row[primary_key] }}')">Löschen</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="/table/{{ table_name }}?db={{ db }}&page={{ page - 1 }}&limit={{ limit }}&search={{ search }}" class="page-item">Zurück</a>
+            {% endif %}
+            
+            {% for i in range(1, total_pages + 1) %}
+                {% if i == page %}
+                <span class="page-item active">{{ i }}</span>
+                {% elif i <= 3 or i >= total_pages - 2 or (i >= page - 1 and i <= page + 1) %}
+                <a href="/table/{{ table_name }}?db={{ db }}&page={{ i }}&limit={{ limit }}&search={{ search }}" class="page-item">{{ i }}</a>
+                {% elif i == 4 or i == total_pages - 3 %}
+                <span class="page-item">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page < total_pages %}
+            <a href="/table/{{ table_name }}?db={{ db }}&page={{ page + 1 }}&limit={{ limit }}&search={{ search }}" class="page-item">Weiter</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <p>Keine Einträge gefunden.</p>
+        {% endif %}
+        
+        <div class="footer">
+            SQLite Datenbank Editor | Port 3333
+        </div>
+    </div>
+    
+    <script>
+        function deleteRow(tableName, rowId) {
+            if (confirm('Sind Sie sicher, dass Sie diesen Eintrag löschen möchten?')) {
+                fetch(`/delete/${tableName}/${rowId}?db={{ db }}`, {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Eintrag erfolgreich gelöscht');
+                        location.reload();
+                    } else {
+                        alert('Fehler beim Löschen des Eintrags: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Fehler beim Löschen des Eintrags: ' + error);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
