@@ -21,8 +21,9 @@
         .db-info { font-size: 0.9em; color: #666; margin-bottom: 20px; }
         .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #888; font-size: 0.9em; }
         
+        .table-container { width: 100%; overflow-x: auto; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th { background-color: #f5f5f5; text-align: left; padding: 12px; border-bottom: 2px solid #ddd; }
+        th { background-color: #f5f5f5; text-align: left; padding: 12px; border-bottom: 2px solid #ddd; white-space: nowrap; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
         tr:hover { background-color: #f9f9f9; }
         
@@ -68,7 +69,8 @@
         
         <div class="subtitle">Spalten</div>
         
-        <table>
+        <div class="table-container">
+            <table>
             <thead>
                 <tr>
                     <th>ID</th>
@@ -92,11 +94,13 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
         
         <div class="subtitle">Indizes</div>
         
         {% if indices %}
-        <table>
+        <div class="table-container">
+            <table>
             <thead>
                 <tr>
                     <th>Name</th>
@@ -116,6 +120,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
         {% else %}
         <p>Keine Indizes gefunden.</p>
         {% endif %}
