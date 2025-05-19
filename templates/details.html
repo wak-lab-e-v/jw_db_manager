@@ -169,30 +169,30 @@
                         <div style="display: flex; flex-direction: column; gap: 5px;">
                             <div style="font-size: 0.9em;">{{ f }}</div>
                             <div style="margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap;">
-                                <a href="/convert_image?source_file={{ work_path }}/{{ f }}&destination_file={{ work_path }}/{{ f.split('.')[0] }}_auto.{{ f.split('.')[-1] }}&text={{ vorname }} {{ name }}" class="convert-button" style="display: inline-block; padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                <a href="/convert_image?source_file={{ work_path }}/{{ f | urlencode }}&destination_file={{ work_path }}/{{ f.split('.')[0] }}_auto.{{ f.split('.')[-1] | urlencode }}&text={{ vorname }} {{ name }}" class="convert-button" style="display: inline-block; padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
                                     Bild konvertieren
                                 </a>
                                 {% if '_auto.' in f or '_frompsd.' in f %}
-                                <a href="/delete_image?file={{ work_path }}/{{ f }}" class="delete-button" style="display: inline-block; padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                <a href="/delete_image?file={{ work_path }}/{{ f | urlencode }}" class="delete-button" style="display: inline-block; padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
                                     Löschen
                                 </a>
                                 {% endif %}
                                 {% if f.lower().endswith('.psd') %}
-                                <a href="/convert_psd?source_file={{ work_path }}/{{ f }}&destination_file={{ work_path }}/{{ f.split('.')[0] }}_frompsd.png" class="psd-button" style="display: inline-block; padding: 5px 10px; background-color: #6610f2; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                <a href="/convert_psd?source_file={{ work_path }}/{{ f | urlencode }}&destination_file={{ work_path }}/{{ f.split('.')[0] }}_frompsd.png" class="psd-button" style="display: inline-block; padding: 5px 10px; background-color: #6610f2; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
                                     PSD konvertieren
                                 </a>
                                 {% endif %}
                                 <div style="margin-top: 5px; width: 100%; display: flex; gap: 5px;">
-                                    <a href="/rotate_image?file={{ work_path }}/{{ f }}&angle=0" class="rotate-button" style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                    <a href="/rotate_image?file={{ work_path }}/{{ f | urlencode }}&angle=0" class="rotate-button" style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
                                         0°
                                     </a>
-                                    <a href="/rotate_image?file={{ work_path }}/{{ f }}&angle=90" class="rotate-button" style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                    <a href="/rotate_image?file={{ work_path }}/{{ f | urlencode }}&angle=90" class="rotate-button" style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
                                         90°
                                     </a>
-                                    <a href="/rotate_image?file={{ work_path }}/{{ f }}&angle=180" class="rotate-button" style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                    <a href="/rotate_image?file={{ work_path }}/{{ f | urlencode }}&angle=180" class="rotate-button" style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
                                         180°
                                     </a>
-                                    <a href="/rotate_image?file={{ work_path }}/{{ f }}&angle=270" class="rotate-button" style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                                    <a href="/rotate_image?file={{ work_path }}/{{ f | urlencode }}&angle=270" class="rotate-button" style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">
                                         270°
                                     </a>
                                 </div>
