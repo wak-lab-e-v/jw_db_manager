@@ -202,17 +202,25 @@ def details(entry_id):
         if feiertag_valid and feieruhrzeit_valid:
             feiertag = new_feiertag
             feieruhrzeit = new_feieruhrzeit
-            final_picture_1 = new_final_picture_1
-            final_picture_2 = new_final_picture_2
-            final_picture_3 = new_final_picture_3
             
-            # Datenbank aktualisieren
-            conn = get_db_connection(db)
-            cur = conn.cursor()
-            cur.execute(f"UPDATE {TABLE} SET vorname = ?, name = ?, hint = ?, status = ?, feiertag = ?, feieruhrzeit = ?, final_picture_1 = ?, final_picture_2 = ?, final_picture_3 = ? WHERE id = ?", 
-                       (vorname, name, hint, status, feiertag, feieruhrzeit, final_picture_1, final_picture_2, final_picture_3, entry_id))
-            conn.commit()
-            conn.close()
+            # Prüfen, ob ein Bild mehrfach als finales Bild ausgewählt wurde
+            final_pictures = [pic for pic in [new_final_picture_1, new_final_picture_2, new_final_picture_3] if pic]
+            if len(final_pictures) != len(set(final_pictures)):
+                # Fehlermeldung setzen, wenn doppelte Bilder gefunden wurden
+                hint = "FEHLER: Ein Bild kann nicht mehrfach als finales Bild ausgewählt werden!\n" + hint
+            else:
+                # Nur wenn keine doppelten Bilder vorhanden sind, die Werte aktualisieren
+                final_picture_1 = new_final_picture_1
+                final_picture_2 = new_final_picture_2
+                final_picture_3 = new_final_picture_3
+                
+                # Datenbank aktualisieren
+                conn = get_db_connection(db)
+                cur = conn.cursor()
+                cur.execute(f"UPDATE {TABLE} SET vorname = ?, name = ?, hint = ?, status = ?, feiertag = ?, feieruhrzeit = ?, final_picture_1 = ?, final_picture_2 = ?, final_picture_3 = ? WHERE id = ?", 
+                           (vorname, name, hint, status, feiertag, feieruhrzeit, final_picture_1, final_picture_2, final_picture_3, entry_id))
+                conn.commit()
+                conn.close()
         else:
             # Fehlermeldung setzen (wird später im HTML angezeigt)
             error_msg = ""
