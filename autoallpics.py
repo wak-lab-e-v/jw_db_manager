@@ -184,12 +184,11 @@ def main():
         person_name = f"{vorname} {name}" if vorname and name else (vorname or name or "Unbekannt")
         
         for i, img_path in enumerate([img_1, img_2, img_3], 1):
-            # Erstelle Zieldateiname mit _auto Suffix
+            # Erstelle Zieldateiname mit _auto Suffix (vor der Nummer)
             dir_name = os.path.dirname(img_path)
             base_name = os.path.splitext(os.path.basename(img_path))[0]
-            ext = os.path.splitext(img_path)[1]
-            # Ersetze Endung _1, _2, _3 durch _auto
-            dest_base = base_name[:-2] + "auto"  # Entfernt _1/_2/_3 und fügt _auto hinzu
+            # Füge _auto vor der Nummer ein: z.B. Ella_Günther_1 -> Ella_Günther_auto_1
+            dest_base = base_name[:-2] + "auto_" + base_name[-1]  # _1 -> _auto_1
             dest_path = os.path.join(dir_name, dest_base + ".jpg")  # Immer als JPG speichern
             
             print(f"  Konvertiere Bild {i}: {os.path.basename(img_path)} -> {os.path.basename(dest_path)}")
