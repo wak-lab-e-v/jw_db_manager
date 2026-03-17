@@ -118,7 +118,7 @@ def check_images_in_path(work_path):
 
 def update_database_final_pictures(entry_id, final_paths):
     """
-    Aktualisiert die final_picture Spalten in der Datenbank.
+    Aktualisiert die final_picture Spalten und den Status in der Datenbank.
     
     Args:
         entry_id: ID des Eintrags
@@ -131,13 +131,14 @@ def update_database_final_pictures(entry_id, final_paths):
         UPDATE anmeldungen
         SET final_picture_1 = ?,
             final_picture_2 = ?,
-            final_picture_3 = ?
+            final_picture_3 = ?,
+            status = 'erledigt'
         WHERE id = ?
     """, (final_paths[0], final_paths[1], final_paths[2], entry_id))
     
     conn.commit()
     conn.close()
-    print(f"  Datenbank aktualisiert für ID {entry_id}")
+    print(f"  Datenbank aktualisiert für ID {entry_id} (Status: erledigt)")
 
 
 def main():
