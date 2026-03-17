@@ -132,13 +132,13 @@ def update_database_final_pictures(entry_id, final_paths):
         SET final_picture_1 = ?,
             final_picture_2 = ?,
             final_picture_3 = ?,
-            status = 'erledigt'
+            status = 'Erledigt'
         WHERE id = ?
     """, (final_paths[0], final_paths[1], final_paths[2], entry_id))
     
     conn.commit()
     conn.close()
-    print(f"  Datenbank aktualisiert für ID {entry_id} (Status: erledigt)")
+    print(f"  Datenbank aktualisiert für ID {entry_id} (Status: Erledigt)")
 
 
 def main():
