@@ -16,6 +16,7 @@ Wenn alle Bedingungen erfüllt sind:
 import os
 import sqlite3
 import sys
+import argparse
 from pathlib import Path
 
 # Importiere die Konvertierungsfunktion
@@ -141,14 +142,102 @@ def update_database_final_pictures(entry_id, final_paths):
     print(f"  Datenbank aktualisiert für ID {entry_id} (Status: Erledigt)")
 
 
+def remove_auto_images_from_path(work_path):
+    """
+    Löscht alle Bilder im angegebenen Pfad, die 'auto' im Dateinamen haben.
+    
+    Args:
+        work_path: Der zu prüfende Pfad
+        
+    Returns:
+        int: Anzahl der gelöschten Dateien
+    """
+    # Unterstützte Bildformate
+    image_extensions = {'.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp', '.gif'}
+    deleted_count = 0
+    
+    # Prüfe, ob der Pfad existiert
+    if not os.path.isdir(work_path):
+        return 0
+    
+    try:
+        for file in os.listdir(work_path):
+            file_lower = file.lower()
+            file_path = os.path.join(work_path, file)
+            
+            # Nur Dateien (keine Verzeichnisse)
+            if not os.path.isfile(file_path):
+                continue
+            
+            # Prüfe, ob es ein Bild ist
+            ext = os.path.splitext(file_lower)[1]
+            if ext not in image_extensions:
+                continue
+            
+            # Prüfe, ob 'auto' im Dateinamen ist
+            if 'auto' in file_lower:
+                os.remove(file_path)
+                print(f"    Gelöscht: {file}")
+                deleted_count += 1
+    except Exception as e:
+        print(f"  Fehler beim Löschen in {work_path}: {e}", file=sys.stderr)
+    
+    return deleted_count
+
+
 def main():
     """Hauptfunktion des Skripts."""
+    # Argumente parsen
+    parser = argparse.ArgumentParser(description='Automatische Bildkonvertierung und Verwaltung')
+    parser.add_argument('--removeauto', action='store_true',
+                        help='Löscht alle Bilder mit "auto" im Dateinamen aus den work_path-Verzeichnissen')
+    args = parser.parse_args()
     # Prüfe, ob die Datenbank existiert
     if not os.path.exists(DB_PATH):
         print(f"Fehler: Datenbank nicht gefunden: {DB_PATH}", file=sys.stderr)
         sys.exit(1)
     
-    # Hole Einträge mit work_path und leeren final_picture-Spalten
+    # Hole alle Einträge mit work_path
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, work_path, vorname, name
+        FROM anmeldungen
+        WHERE work_path IS NOT NULL AND work_path != ''
+    """)
+    entries = cursor.fetchall()
+    conn.close()
+    
+    if not entries:
+        print("Keine Einträge mit work_path gefunden.")
+        return
+    
+    # Basis-Verzeichnis für work_path
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    if args.removeauto:
+        # Lösche alle auto-Bilder
+        total_deleted = 0
+        for entry in entries:
+            entry_id, work_path, vorname, name = entry
+            
+            # Konvertiere relativen Pfad zu absolutem Pfad falls nötig
+            if not os.path.isabs(work_path):
+                full_path = os.path.join(base_dir, work_path)
+            else:
+                full_path = work_path
+            
+            full_path = os.path.normpath(full_path)
+            
+            if os.path.isdir(full_path):
+                print(f"\nPrüfe: {full_path} ({vorname} {name})")
+                deleted = remove_auto_images_from_path(full_path)
+                total_deleted += deleted
+        
+        print(f"\n{total_deleted} Bilder mit 'auto' im Namen gelöscht.")
+        return
+    
+    # Standard: Bilder konvertieren (nur Einträge mit leeren final_picture)
     entries = get_entries_with_work_path()
     
     if not entries:
