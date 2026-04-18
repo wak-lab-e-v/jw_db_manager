@@ -21,23 +21,35 @@ def update_indices(df):
     # Mapping für die benötigten Spalten erstellen
     updated_mapping = {}
     
+    # Mapping von normalisierten Spaltennamen (lowercase, ohne Leerzeichen)
+    # auf interne Variablennamen. Mehrere Varianten pro Feld erlaubt, um
+    # Tippfehler und Umbenennungen in der Excel-Datei abzufangen.
+    column_aliases = {
+        "BESTELLNUMMER":     ["bestellnummer", "bestellnumer"],
+        "NAME":              ["name"],
+        "VORNAME":           ["vorname"],
+        "FEIERTAG":          ["feiertag"],
+        "FEIERUHRZEIT":      ["feieruhrzeit"],
+        "BILDER_DA":         ["bilderda"],
+        "BILDERABGABE_WIE":  ["bilderabgabewie"],
+        "LOCATION":          ["location", "feierort"],
+    }
+
+    def normalize(value):
+        if value is None:
+            return ""
+        return "".join(str(value).lower().split())
+
     # Suche nach den benötigten Spalten
     for col_idx, col_name in enumerate(header_row):
-        if col_name == "Bestellnumer":
-            updated_mapping["BESTELLNUMMER"] = col_idx
-        elif col_name == "Name":
-            updated_mapping["NAME"] = col_idx
-        elif col_name == "Vorname":
-            updated_mapping["VORNAME"] = col_idx
-        elif col_name == "Feiertag":
-            updated_mapping["FEIERTAG"] = col_idx
-        elif col_name == "Feieruhrzeit":
-            updated_mapping["FEIERUHRZEIT"] = col_idx
-        elif col_name == "Bilder da":
-            updated_mapping["BILDER_DA"] = col_idx
-        elif col_name == "Bilderabgabe wie":
-            updated_mapping["BILDERABGABE_WIE"] = col_idx
-        elif col_name == "Location":
-            updated_mapping["LOCATION"] = col_idx
-    
+        norm = normalize(col_name)
+        if not norm:
+            continue
+        for var_name, aliases in column_aliases.items():
+            if var_name in updated_mapping:
+                continue
+            if norm in aliases:
+                updated_mapping[var_name] = col_idx
+                break
+
     return updated_mapping
